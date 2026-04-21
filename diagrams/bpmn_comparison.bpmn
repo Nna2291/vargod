@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_Comparison" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="18.12.0">
+  <bpmn:collaboration id="Collab_Comparison">
+    <bpmn:participant id="Pool_Comparison" name="Сравнение экспериментов" processRef="Process_Comparison" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_Comparison" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_1">
+      <bpmn:lane id="Lane_User" name="Исследователь">
+        <bpmn:flowNodeRef>Start_User</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_OpenList</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_SelectExperiments</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_IncompatibleModels</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_NotCompleted</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ViewChart</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_Save</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_NoSave</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Server" name="Сервер">
+        <bpmn:flowNodeRef>Task_CheckCompatibility</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_Compatible</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_CheckStatuses</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_AllCompleted</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ComputeComparison</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_DB" name="БД">
+        <bpmn:flowNodeRef>Task_FetchTimeSeries</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_SaveComparison</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_Saved</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Start_User" name="Начало">
+      <bpmn:outgoing>SF_0</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="Task_OpenList" name="Открыть список экспериментов">
+      <bpmn:incoming>SF_0</bpmn:incoming>
+      <bpmn:outgoing>SF_1</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_SelectExperiments" name="Выбрать 2+ эксперимента для сравнения">
+      <bpmn:incoming>SF_1</bpmn:incoming>
+      <bpmn:outgoing>SF_2</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Task_CheckCompatibility" name="Проверить совместимость моделей">
+      <bpmn:incoming>SF_2</bpmn:incoming>
+      <bpmn:outgoing>SF_3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="GW_Compatible" name="Модели совпадают?">
+      <bpmn:incoming>SF_3</bpmn:incoming>
+      <bpmn:outgoing>SF_Comp_no</bpmn:outgoing>
+      <bpmn:outgoing>SF_Comp_yes</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="End_IncompatibleModels" name="Несовместимые модели">
+      <bpmn:incoming>SF_Comp_no</bpmn:incoming>
+      <bpmn:errorEventDefinition id="ErrDef_1" />
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Task_CheckStatuses" name="Проверить статус экспериментов">
+      <bpmn:incoming>SF_Comp_yes</bpmn:incoming>
+      <bpmn:outgoing>SF_4</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="GW_AllCompleted" name="Все эксперименты завершены?">
+      <bpmn:incoming>SF_4</bpmn:incoming>
+      <bpmn:outgoing>SF_AllComp_no</bpmn:outgoing>
+      <bpmn:outgoing>SF_AllComp_yes</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="End_NotCompleted" name="Есть незавершённые эксперименты">
+      <bpmn:incoming>SF_AllComp_no</bpmn:incoming>
+      <bpmn:errorEventDefinition id="ErrDef_2" />
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Task_FetchTimeSeries" name="Загрузить временные ряды экспериментов">
+      <bpmn:incoming>SF_AllComp_yes</bpmn:incoming>
+      <bpmn:outgoing>SF_5</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_ComputeComparison" name="Вычислить нормализованные ряды и построить данные графика">
+      <bpmn:incoming>SF_5</bpmn:incoming>
+      <bpmn:outgoing>SF_6</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="Task_ViewChart" name="Просмотреть сравнительный график">
+      <bpmn:incoming>SF_6</bpmn:incoming>
+      <bpmn:outgoing>SF_7</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="GW_Save" name="Сохранить сравнение?">
+      <bpmn:incoming>SF_7</bpmn:incoming>
+      <bpmn:outgoing>SF_Save_no</bpmn:outgoing>
+      <bpmn:outgoing>SF_Save_yes</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="End_NoSave" name="Сравнение не сохранено">
+      <bpmn:incoming>SF_Save_no</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Task_SaveComparison" name="Сохранить Comparison с ссылками на эксперименты">
+      <bpmn:incoming>SF_Save_yes</bpmn:incoming>
+      <bpmn:outgoing>SF_8</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="End_Saved" name="Сравнение сохранено">
+      <bpmn:incoming>SF_8</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="SF_0" sourceRef="Start_User" targetRef="Task_OpenList" />
+    <bpmn:sequenceFlow id="SF_1" sourceRef="Task_OpenList" targetRef="Task_SelectExperiments" />
+    <bpmn:sequenceFlow id="SF_2" sourceRef="Task_SelectExperiments" targetRef="Task_CheckCompatibility" />
+    <bpmn:sequenceFlow id="SF_3" sourceRef="Task_CheckCompatibility" targetRef="GW_Compatible" />
+    <bpmn:sequenceFlow id="SF_Comp_no" name="нет" sourceRef="GW_Compatible" targetRef="End_IncompatibleModels" />
+    <bpmn:sequenceFlow id="SF_Comp_yes" name="да" sourceRef="GW_Compatible" targetRef="Task_CheckStatuses" />
+    <bpmn:sequenceFlow id="SF_4" sourceRef="Task_CheckStatuses" targetRef="GW_AllCompleted" />
+    <bpmn:sequenceFlow id="SF_AllComp_no" name="нет" sourceRef="GW_AllCompleted" targetRef="End_NotCompleted" />
+    <bpmn:sequenceFlow id="SF_AllComp_yes" name="да" sourceRef="GW_AllCompleted" targetRef="Task_FetchTimeSeries" />
+    <bpmn:sequenceFlow id="SF_5" sourceRef="Task_FetchTimeSeries" targetRef="Task_ComputeComparison" />
+    <bpmn:sequenceFlow id="SF_6" sourceRef="Task_ComputeComparison" targetRef="Task_ViewChart" />
+    <bpmn:sequenceFlow id="SF_7" sourceRef="Task_ViewChart" targetRef="GW_Save" />
+    <bpmn:sequenceFlow id="SF_Save_no" name="нет" sourceRef="GW_Save" targetRef="End_NoSave" />
+    <bpmn:sequenceFlow id="SF_Save_yes" name="да" sourceRef="GW_Save" targetRef="Task_SaveComparison" />
+    <bpmn:sequenceFlow id="SF_8" sourceRef="Task_SaveComparison" targetRef="End_Saved" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collab_Comparison">
+      <bpmndi:BPMNShape id="Pool_Comparison_di" bpmnElement="Pool_Comparison" isHorizontal="true">
+        <dc:Bounds x="120" y="60" width="2620" height="570" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_User_di" bpmnElement="Lane_User" isHorizontal="true">
+        <dc:Bounds x="150" y="60" width="2590" height="190" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Server_di" bpmnElement="Lane_Server" isHorizontal="true">
+        <dc:Bounds x="150" y="250" width="2590" height="190" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_DB_di" bpmnElement="Lane_DB" isHorizontal="true">
+        <dc:Bounds x="150" y="440" width="2590" height="190" />
+      </bpmndi:BPMNShape>
+      <!-- User lane -->
+      <bpmndi:BPMNShape id="Start_User_di" bpmnElement="Start_User">
+        <dc:Bounds x="182" y="137" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="182" y="180" width="36" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_OpenList_di" bpmnElement="Task_OpenList">
+        <dc:Bounds x="250" y="115" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SelectExperiments_di" bpmnElement="Task_SelectExperiments">
+        <dc:Bounds x="470" y="115" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ViewChart_di" bpmnElement="Task_ViewChart">
+        <dc:Bounds x="1900" y="115" width="220" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_Save_di" bpmnElement="GW_Save" isMarkerVisible="true">
+        <dc:Bounds x="2170" y="130" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2140" y="187" width="110" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_NoSave_di" bpmnElement="End_NoSave">
+        <dc:Bounds x="2177" y="192" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2147" y="235" width="97" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <!-- Server lane -->
+      <bpmndi:BPMNShape id="Task_CheckCompatibility_di" bpmnElement="Task_CheckCompatibility">
+        <dc:Bounds x="680" y="305" width="220" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_Compatible_di" bpmnElement="GW_Compatible" isMarkerVisible="true">
+        <dc:Bounds x="950" y="320" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="918" y="377" width="115" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_IncompatibleModels_di" bpmnElement="End_IncompatibleModels">
+        <dc:Bounds x="1102" y="137" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1072" y="180" width="97" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_CheckStatuses_di" bpmnElement="Task_CheckStatuses">
+        <dc:Bounds x="1050" y="305" width="210" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_AllCompleted_di" bpmnElement="GW_AllCompleted" isMarkerVisible="true">
+        <dc:Bounds x="1310" y="320" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1270" y="377" width="130" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_NotCompleted_di" bpmnElement="End_NotCompleted">
+        <dc:Bounds x="1402" y="137" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1362" y="180" width="117" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ComputeComparison_di" bpmnElement="Task_ComputeComparison">
+        <dc:Bounds x="1620" y="305" width="240" height="80" />
+      </bpmndi:BPMNShape>
+      <!-- DB lane -->
+      <bpmndi:BPMNShape id="Task_FetchTimeSeries_di" bpmnElement="Task_FetchTimeSeries">
+        <dc:Bounds x="1400" y="495" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SaveComparison_di" bpmnElement="Task_SaveComparison">
+        <dc:Bounds x="2270" y="495" width="250" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Saved_di" bpmnElement="End_Saved">
+        <dc:Bounds x="2572" y="517" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2545" y="560" width="91" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <!-- Edges -->
+      <bpmndi:BPMNEdge id="SF_0_di" bpmnElement="SF_0">
+        <di:waypoint x="218" y="155" />
+        <di:waypoint x="250" y="155" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_1_di" bpmnElement="SF_1">
+        <di:waypoint x="430" y="155" />
+        <di:waypoint x="470" y="155" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_2_di" bpmnElement="SF_2">
+        <di:waypoint x="670" y="155" />
+        <di:waypoint x="675" y="155" />
+        <di:waypoint x="675" y="345" />
+        <di:waypoint x="680" y="345" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_3_di" bpmnElement="SF_3">
+        <di:waypoint x="900" y="345" />
+        <di:waypoint x="950" y="345" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_Comp_no_di" bpmnElement="SF_Comp_no">
+        <di:waypoint x="975" y="320" />
+        <di:waypoint x="975" y="155" />
+        <di:waypoint x="1102" y="155" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="983" y="230" width="17" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_Comp_yes_di" bpmnElement="SF_Comp_yes">
+        <di:waypoint x="1000" y="345" />
+        <di:waypoint x="1050" y="345" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1015" y="323" width="13" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_4_di" bpmnElement="SF_4">
+        <di:waypoint x="1260" y="345" />
+        <di:waypoint x="1310" y="345" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_AllComp_no_di" bpmnElement="SF_AllComp_no">
+        <di:waypoint x="1335" y="320" />
+        <di:waypoint x="1335" y="155" />
+        <di:waypoint x="1402" y="155" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1343" y="230" width="17" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_AllComp_yes_di" bpmnElement="SF_AllComp_yes">
+        <di:waypoint x="1360" y="345" />
+        <di:waypoint x="1380" y="345" />
+        <di:waypoint x="1380" y="535" />
+        <di:waypoint x="1400" y="535" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1362" y="323" width="13" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_5_di" bpmnElement="SF_5">
+        <di:waypoint x="1600" y="535" />
+        <di:waypoint x="1610" y="535" />
+        <di:waypoint x="1610" y="345" />
+        <di:waypoint x="1620" y="345" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_6_di" bpmnElement="SF_6">
+        <di:waypoint x="1860" y="345" />
+        <di:waypoint x="1880" y="345" />
+        <di:waypoint x="1880" y="155" />
+        <di:waypoint x="1900" y="155" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_7_di" bpmnElement="SF_7">
+        <di:waypoint x="2120" y="155" />
+        <di:waypoint x="2170" y="155" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_Save_no_di" bpmnElement="SF_Save_no">
+        <di:waypoint x="2195" y="180" />
+        <di:waypoint x="2195" y="192" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2203" y="183" width="17" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_Save_yes_di" bpmnElement="SF_Save_yes">
+        <di:waypoint x="2220" y="155" />
+        <di:waypoint x="2245" y="155" />
+        <di:waypoint x="2245" y="535" />
+        <di:waypoint x="2270" y="535" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2223" y="133" width="13" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_8_di" bpmnElement="SF_8">
+        <di:waypoint x="2520" y="535" />
+        <di:waypoint x="2572" y="535" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_BioSim" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="18.12.0">
+  <bpmn:collaboration id="Collab_BioSim">
+    <bpmn:participant id="Pool_BioSim" name="Проведение вычислительного эксперимента" processRef="Process_Experiment" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_Experiment" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_1">
+      <bpmn:lane id="Lane_User" name="Исследователь">
+        <bpmn:flowNodeRef>Start_User</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_SelectModel</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_EnterParams</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_InvalidParams</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_RunSim</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_SimFailed</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ViewResults</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_Publish</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Server" name="Сервер">
+        <bpmn:flowNodeRef>Task_Validate</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_Valid</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_SolveODE</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_Success</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_HandlePublication</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_DB" name="БД">
+        <bpmn:flowNodeRef>Task_SaveExperiment</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_SaveResults</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_NoPublish</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_SetPublic</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_Published</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Start_User" name="Начало">
+      <bpmn:outgoing>SF_0</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="Task_SelectModel" name="Выбрать модель из каталога">
+      <bpmn:incoming>SF_0</bpmn:incoming>
+      <bpmn:outgoing>SF_1</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_EnterParams" name="Задать параметры симуляции">
+      <bpmn:incoming>SF_1</bpmn:incoming>
+      <bpmn:outgoing>SF_2</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Task_Validate" name="Валидировать параметры">
+      <bpmn:incoming>SF_2</bpmn:incoming>
+      <bpmn:outgoing>SF_3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="GW_Valid" name="Параметры корректны?">
+      <bpmn:incoming>SF_3</bpmn:incoming>
+      <bpmn:outgoing>SF_Valid_no</bpmn:outgoing>
+      <bpmn:outgoing>SF_Valid_yes</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="End_InvalidParams" name="Ошибка валидации">
+      <bpmn:incoming>SF_Valid_no</bpmn:incoming>
+      <bpmn:errorEventDefinition id="ErrDef_1" />
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Task_SaveExperiment" name="Сохранить эксперимент и параметры">
+      <bpmn:incoming>SF_Valid_yes</bpmn:incoming>
+      <bpmn:outgoing>SF_DB1</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="Task_RunSim" name="Запустить симуляцию">
+      <bpmn:incoming>SF_DB1</bpmn:incoming>
+      <bpmn:outgoing>SF_4</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Task_SolveODE" name="Решить систему ОДУ численным методом">
+      <bpmn:incoming>SF_4</bpmn:incoming>
+      <bpmn:outgoing>SF_5</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="GW_Success" name="Симуляция успешна?">
+      <bpmn:incoming>SF_5</bpmn:incoming>
+      <bpmn:outgoing>SF_Success_no</bpmn:outgoing>
+      <bpmn:outgoing>SF_Success_yes</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="End_SimFailed" name="Сбой симуляции">
+      <bpmn:incoming>SF_Success_no</bpmn:incoming>
+      <bpmn:errorEventDefinition id="ErrDef_2" />
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Task_SaveResults" name="Сохранить результаты и статус completed">
+      <bpmn:incoming>SF_Success_yes</bpmn:incoming>
+      <bpmn:outgoing>SF_DB2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="Task_ViewResults" name="Просмотреть результаты на графике">
+      <bpmn:incoming>SF_DB2</bpmn:incoming>
+      <bpmn:outgoing>SF_6</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="GW_Publish" name="Опубликовать эксперимент?">
+      <bpmn:incoming>SF_6</bpmn:incoming>
+      <bpmn:outgoing>SF_Publish_no</bpmn:outgoing>
+      <bpmn:outgoing>SF_Publish_yes</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="End_NoPublish" name="Эксперимент сохранён">
+      <bpmn:incoming>SF_Publish_no</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Task_HandlePublication" name="Обработать публикацию">
+      <bpmn:incoming>SF_Publish_yes</bpmn:incoming>
+      <bpmn:outgoing>SF_7</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_SetPublic" name="Установить is_public = true">
+      <bpmn:incoming>SF_7</bpmn:incoming>
+      <bpmn:outgoing>SF_8</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="End_Published" name="Эксперимент опубликован">
+      <bpmn:incoming>SF_8</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="SF_0" sourceRef="Start_User" targetRef="Task_SelectModel" />
+    <bpmn:sequenceFlow id="SF_1" sourceRef="Task_SelectModel" targetRef="Task_EnterParams" />
+    <bpmn:sequenceFlow id="SF_2" sourceRef="Task_EnterParams" targetRef="Task_Validate" />
+    <bpmn:sequenceFlow id="SF_3" sourceRef="Task_Validate" targetRef="GW_Valid" />
+    <bpmn:sequenceFlow id="SF_Valid_no" name="нет" sourceRef="GW_Valid" targetRef="End_InvalidParams" />
+    <bpmn:sequenceFlow id="SF_Valid_yes" name="да" sourceRef="GW_Valid" targetRef="Task_SaveExperiment" />
+    <bpmn:sequenceFlow id="SF_DB1" sourceRef="Task_SaveExperiment" targetRef="Task_RunSim" />
+    <bpmn:sequenceFlow id="SF_4" sourceRef="Task_RunSim" targetRef="Task_SolveODE" />
+    <bpmn:sequenceFlow id="SF_5" sourceRef="Task_SolveODE" targetRef="GW_Success" />
+    <bpmn:sequenceFlow id="SF_Success_no" name="нет" sourceRef="GW_Success" targetRef="End_SimFailed" />
+    <bpmn:sequenceFlow id="SF_Success_yes" name="да" sourceRef="GW_Success" targetRef="Task_SaveResults" />
+    <bpmn:sequenceFlow id="SF_DB2" sourceRef="Task_SaveResults" targetRef="Task_ViewResults" />
+    <bpmn:sequenceFlow id="SF_6" sourceRef="Task_ViewResults" targetRef="GW_Publish" />
+    <bpmn:sequenceFlow id="SF_Publish_no" name="нет" sourceRef="GW_Publish" targetRef="End_NoPublish" />
+    <bpmn:sequenceFlow id="SF_Publish_yes" name="да" sourceRef="GW_Publish" targetRef="Task_HandlePublication" />
+    <bpmn:sequenceFlow id="SF_7" sourceRef="Task_HandlePublication" targetRef="Task_SetPublic" />
+    <bpmn:sequenceFlow id="SF_8" sourceRef="Task_SetPublic" targetRef="End_Published" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collab_BioSim">
+      <bpmndi:BPMNShape id="Pool_BioSim_di" bpmnElement="Pool_BioSim" isHorizontal="true">
+        <dc:Bounds x="120" y="60" width="2620" height="570" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_User_di" bpmnElement="Lane_User" isHorizontal="true">
+        <dc:Bounds x="150" y="60" width="2590" height="190" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Server_di" bpmnElement="Lane_Server" isHorizontal="true">
+        <dc:Bounds x="150" y="250" width="2590" height="190" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_DB_di" bpmnElement="Lane_DB" isHorizontal="true">
+        <dc:Bounds x="150" y="440" width="2590" height="190" />
+      </bpmndi:BPMNShape>
+      <!-- User lane -->
+      <bpmndi:BPMNShape id="Start_User_di" bpmnElement="Start_User">
+        <dc:Bounds x="182" y="137" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="182" y="180" width="36" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SelectModel_di" bpmnElement="Task_SelectModel">
+        <dc:Bounds x="250" y="115" width="170" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_EnterParams_di" bpmnElement="Task_EnterParams">
+        <dc:Bounds x="460" y="115" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_RunSim_di" bpmnElement="Task_RunSim">
+        <dc:Bounds x="1200" y="115" width="170" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ViewResults_di" bpmnElement="Task_ViewResults">
+        <dc:Bounds x="1950" y="115" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_Publish_di" bpmnElement="GW_Publish" isMarkerVisible="true">
+        <dc:Bounds x="2200" y="130" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2163" y="187" width="125" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_NoPublish_di" bpmnElement="End_NoPublish">
+        <dc:Bounds x="2207" y="517" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2183" y="560" width="85" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <!-- Server lane -->
+      <bpmndi:BPMNShape id="Task_Validate_di" bpmnElement="Task_Validate">
+        <dc:Bounds x="680" y="305" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_Valid_di" bpmnElement="GW_Valid" isMarkerVisible="true">
+        <dc:Bounds x="890" y="320" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="858" y="377" width="115" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_InvalidParams_di" bpmnElement="End_InvalidParams">
+        <dc:Bounds x="1030" y="137" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1007" y="180" width="83" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SolveODE_di" bpmnElement="Task_SolveODE">
+        <dc:Bounds x="1390" y="305" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_Success_di" bpmnElement="GW_Success" isMarkerVisible="true">
+        <dc:Bounds x="1640" y="320" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1608" y="377" width="115" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_SimFailed_di" bpmnElement="End_SimFailed">
+        <dc:Bounds x="1780" y="137" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1757" y="180" width="83" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_HandlePublication_di" bpmnElement="Task_HandlePublication">
+        <dc:Bounds x="2300" y="305" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <!-- DB lane -->
+      <bpmndi:BPMNShape id="Task_SaveExperiment_di" bpmnElement="Task_SaveExperiment">
+        <dc:Bounds x="980" y="495" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SaveResults_di" bpmnElement="Task_SaveResults">
+        <dc:Bounds x="1700" y="495" width="220" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SetPublic_di" bpmnElement="Task_SetPublic">
+        <dc:Bounds x="2300" y="495" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Published_di" bpmnElement="End_Published">
+        <dc:Bounds x="2532" y="517" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2507" y="560" width="88" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <!-- Edges -->
+      <bpmndi:BPMNEdge id="SF_0_di" bpmnElement="SF_0">
+        <di:waypoint x="218" y="155" />
+        <di:waypoint x="250" y="155" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_1_di" bpmnElement="SF_1">
+        <di:waypoint x="420" y="155" />
+        <di:waypoint x="460" y="155" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_2_di" bpmnElement="SF_2">
+        <di:waypoint x="640" y="155" />
+        <di:waypoint x="660" y="155" />
+        <di:waypoint x="660" y="345" />
+        <di:waypoint x="680" y="345" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_3_di" bpmnElement="SF_3">
+        <di:waypoint x="840" y="345" />
+        <di:waypoint x="890" y="345" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_Valid_no_di" bpmnElement="SF_Valid_no">
+        <di:waypoint x="915" y="320" />
+        <di:waypoint x="915" y="155" />
+        <di:waypoint x="1030" y="155" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="923" y="230" width="17" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_Valid_yes_di" bpmnElement="SF_Valid_yes">
+        <di:waypoint x="940" y="345" />
+        <di:waypoint x="960" y="345" />
+        <di:waypoint x="960" y="535" />
+        <di:waypoint x="980" y="535" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="942" y="323" width="13" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_DB1_di" bpmnElement="SF_DB1">
+        <di:waypoint x="1180" y="535" />
+        <di:waypoint x="1190" y="535" />
+        <di:waypoint x="1190" y="155" />
+        <di:waypoint x="1200" y="155" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_4_di" bpmnElement="SF_4">
+        <di:waypoint x="1370" y="155" />
+        <di:waypoint x="1380" y="155" />
+        <di:waypoint x="1380" y="345" />
+        <di:waypoint x="1390" y="345" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_5_di" bpmnElement="SF_5">
+        <di:waypoint x="1590" y="345" />
+        <di:waypoint x="1640" y="345" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_Success_no_di" bpmnElement="SF_Success_no">
+        <di:waypoint x="1665" y="320" />
+        <di:waypoint x="1665" y="155" />
+        <di:waypoint x="1780" y="155" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1673" y="230" width="17" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_Success_yes_di" bpmnElement="SF_Success_yes">
+        <di:waypoint x="1690" y="345" />
+        <di:waypoint x="1695" y="345" />
+        <di:waypoint x="1695" y="535" />
+        <di:waypoint x="1700" y="535" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1692" y="323" width="13" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_DB2_di" bpmnElement="SF_DB2">
+        <di:waypoint x="1920" y="535" />
+        <di:waypoint x="1935" y="535" />
+        <di:waypoint x="1935" y="155" />
+        <di:waypoint x="1950" y="155" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_6_di" bpmnElement="SF_6">
+        <di:waypoint x="2150" y="155" />
+        <di:waypoint x="2200" y="155" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_Publish_no_di" bpmnElement="SF_Publish_no">
+        <di:waypoint x="2225" y="180" />
+        <di:waypoint x="2225" y="535" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2233" y="350" width="17" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_Publish_yes_di" bpmnElement="SF_Publish_yes">
+        <di:waypoint x="2250" y="155" />
+        <di:waypoint x="2275" y="155" />
+        <di:waypoint x="2275" y="345" />
+        <di:waypoint x="2300" y="345" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2253" y="133" width="13" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_7_di" bpmnElement="SF_7">
+        <di:waypoint x="2390" y="385" />
+        <di:waypoint x="2390" y="495" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SF_8_di" bpmnElement="SF_8">
+        <di:waypoint x="2480" y="535" />
+        <di:waypoint x="2532" y="535" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

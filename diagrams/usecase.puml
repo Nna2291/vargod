@@ -1,0 +1,46 @@
+@startuml usecase
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+left to right direction
+
+actor "Гость" as Guest
+actor "Исследователь" as Researcher
+
+Guest <|-- Researcher
+
+rectangle "Vargod" {
+  usecase "Просмотр каталога моделей" as UC1
+  usecase "Просмотр описания модели" as UC2
+  usecase "Просмотр публичных\nэкспериментов" as UC3
+  usecase "Регистрация" as UC4
+  usecase "Авторизация" as UC5
+
+  usecase "Создание эксперимента" as UC6
+  usecase "Настройка параметров\nсимуляции" as UC7
+  usecase "Запуск симуляции" as UC8
+  usecase "Просмотр результатов\nна графике" as UC9
+  usecase "Сохранение эксперимента" as UC10
+  usecase "Сравнение экспериментов" as UC11
+  usecase "Публикация эксперимента" as UC12
+}
+
+Guest --> UC1
+Guest --> UC2
+Guest --> UC3
+Guest --> UC4
+Guest --> UC5
+
+Researcher --> UC6
+Researcher --> UC7
+Researcher --> UC8
+Researcher --> UC9
+Researcher --> UC10
+Researcher --> UC11
+Researcher --> UC12
+
+UC6 ..> UC7 : <<include>>
+UC8 ..> UC7 : <<include>>
+UC9 ..> UC8 : <<extend>>
+UC12 ..> UC10 : <<include>>
+
+@enduml

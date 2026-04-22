@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_Comparison" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="18.12.0">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_Comparison" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="18.13.2">
   <bpmn:collaboration id="Collab_Comparison">
     <bpmn:participant id="Pool_Comparison" name="Сравнение экспериментов" processRef="Process_Comparison" />
   </bpmn:collaboration>
@@ -13,7 +13,6 @@
         <bpmn:flowNodeRef>End_NotCompleted</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_ViewChart</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>GW_Save</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>End_NoSave</bpmn:flowNodeRef>
       </bpmn:lane>
       <bpmn:lane id="Lane_Server" name="Сервер">
         <bpmn:flowNodeRef>Task_CheckCompatibility</bpmn:flowNodeRef>
@@ -21,6 +20,7 @@
         <bpmn:flowNodeRef>Task_CheckStatuses</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>GW_AllCompleted</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_ComputeComparison</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_NoSave</bpmn:flowNodeRef>
       </bpmn:lane>
       <bpmn:lane id="Lane_DB" name="БД">
         <bpmn:flowNodeRef>Task_FetchTimeSeries</bpmn:flowNodeRef>
@@ -82,9 +82,6 @@
       <bpmn:outgoing>SF_Save_no</bpmn:outgoing>
       <bpmn:outgoing>SF_Save_yes</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-    <bpmn:endEvent id="End_NoSave" name="Сравнение не сохранено">
-      <bpmn:incoming>SF_Save_no</bpmn:incoming>
-    </bpmn:endEvent>
     <bpmn:serviceTask id="Task_SaveComparison" name="Сохранить Comparison с ссылками на эксперименты">
       <bpmn:incoming>SF_Save_yes</bpmn:incoming>
       <bpmn:outgoing>SF_8</bpmn:outgoing>
@@ -107,6 +104,9 @@
     <bpmn:sequenceFlow id="SF_Save_no" name="нет" sourceRef="GW_Save" targetRef="End_NoSave" />
     <bpmn:sequenceFlow id="SF_Save_yes" name="да" sourceRef="GW_Save" targetRef="Task_SaveComparison" />
     <bpmn:sequenceFlow id="SF_8" sourceRef="Task_SaveComparison" targetRef="End_Saved" />
+    <bpmn:endEvent id="End_NoSave" name="Сравнение не сохранено">
+      <bpmn:incoming>SF_Save_no</bpmn:incoming>
+    </bpmn:endEvent>
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collab_Comparison">
@@ -114,16 +114,15 @@
         <dc:Bounds x="120" y="60" width="2620" height="570" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Lane_User_di" bpmnElement="Lane_User" isHorizontal="true">
-        <dc:Bounds x="150" y="60" width="2590" height="190" />
+      <bpmndi:BPMNShape id="Lane_DB_di" bpmnElement="Lane_DB" isHorizontal="true">
+        <dc:Bounds x="150" y="440" width="2590" height="190" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Lane_Server_di" bpmnElement="Lane_Server" isHorizontal="true">
         <dc:Bounds x="150" y="250" width="2590" height="190" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Lane_DB_di" bpmnElement="Lane_DB" isHorizontal="true">
-        <dc:Bounds x="150" y="440" width="2590" height="190" />
+      <bpmndi:BPMNShape id="Lane_User_di" bpmnElement="Lane_User" isHorizontal="true">
+        <dc:Bounds x="150" y="60" width="2590" height="190" />
       </bpmndi:BPMNShape>
-      <!-- User lane -->
       <bpmndi:BPMNShape id="Start_User_di" bpmnElement="Start_User">
         <dc:Bounds x="182" y="137" width="36" height="36" />
         <bpmndi:BPMNLabel>
@@ -136,22 +135,6 @@
       <bpmndi:BPMNShape id="Task_SelectExperiments_di" bpmnElement="Task_SelectExperiments">
         <dc:Bounds x="470" y="115" width="200" height="80" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_ViewChart_di" bpmnElement="Task_ViewChart">
-        <dc:Bounds x="1900" y="115" width="220" height="80" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="GW_Save_di" bpmnElement="GW_Save" isMarkerVisible="true">
-        <dc:Bounds x="2170" y="130" width="50" height="50" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="2140" y="187" width="110" height="27" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="End_NoSave_di" bpmnElement="End_NoSave">
-        <dc:Bounds x="2177" y="192" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="2147" y="235" width="97" height="27" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <!-- Server lane -->
       <bpmndi:BPMNShape id="Task_CheckCompatibility_di" bpmnElement="Task_CheckCompatibility">
         <dc:Bounds x="680" y="305" width="220" height="80" />
       </bpmndi:BPMNShape>
@@ -182,12 +165,20 @@
           <dc:Bounds x="1362" y="180" width="117" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_FetchTimeSeries_di" bpmnElement="Task_FetchTimeSeries">
+        <dc:Bounds x="1400" y="495" width="200" height="80" />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_ComputeComparison_di" bpmnElement="Task_ComputeComparison">
         <dc:Bounds x="1620" y="305" width="240" height="80" />
       </bpmndi:BPMNShape>
-      <!-- DB lane -->
-      <bpmndi:BPMNShape id="Task_FetchTimeSeries_di" bpmnElement="Task_FetchTimeSeries">
-        <dc:Bounds x="1400" y="495" width="200" height="80" />
+      <bpmndi:BPMNShape id="Task_ViewChart_di" bpmnElement="Task_ViewChart">
+        <dc:Bounds x="1900" y="115" width="220" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_Save_di" bpmnElement="GW_Save" isMarkerVisible="true">
+        <dc:Bounds x="2170" y="130" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2164" y="92.5" width="61" height="27" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_SaveComparison_di" bpmnElement="Task_SaveComparison">
         <dc:Bounds x="2270" y="495" width="250" height="80" />
@@ -198,7 +189,12 @@
           <dc:Bounds x="2545" y="560" width="91" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <!-- Edges -->
+      <bpmndi:BPMNShape id="End_NoSave_di" bpmnElement="End_NoSave">
+        <dc:Bounds x="2177" y="327" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2160" y="370" width="72" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="SF_0_di" bpmnElement="SF_0">
         <di:waypoint x="218" y="155" />
         <di:waypoint x="250" y="155" />
@@ -271,9 +267,9 @@
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="SF_Save_no_di" bpmnElement="SF_Save_no">
         <di:waypoint x="2195" y="180" />
-        <di:waypoint x="2195" y="192" />
+        <di:waypoint x="2195" y="327" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="2203" y="183" width="17" height="14" />
+          <dc:Bounds x="2203" y="296" width="17" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="SF_Save_yes_di" bpmnElement="SF_Save_yes">

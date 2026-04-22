@@ -1,207 +1,257 @@
-<mxfile host="app.diagrams.net" agent="vargod">
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 YaBrowser/26.3.0.0 Safari/537.36" version="29.3.4">
   <diagram name="ER — Vargod" id="ER_VARGOD">
-    <mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1600" math="0" shadow="0">
+    <mxGraphModel dx="2876" dy="644" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1600" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="E_USER" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" value="ПОЛЬЗОВАТЕЛЬ" vertex="1">
+        <mxCell id="E_USER" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=13;" value="ПОЛЬЗОВАТЕЛЬ" vertex="1">
           <mxGeometry height="60" width="200" x="750" y="260" as="geometry" />
         </mxCell>
-        <mxCell id="E_MODEL" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" value="ШАБЛОН МОДЕЛИ" vertex="1">
+        <mxCell id="E_MODEL" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=13;" value="ШАБЛОН МОДЕЛИ" vertex="1">
           <mxGeometry height="60" width="200" x="100" y="530" as="geometry" />
         </mxCell>
-        <mxCell id="E_EXP" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" value="ЭКСПЕРИМЕНТ" vertex="1">
+        <mxCell id="E_EXP" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=13;" value="ЭКСПЕРИМЕНТ" vertex="1">
           <mxGeometry height="60" width="200" x="750" y="530" as="geometry" />
         </mxCell>
-        <mxCell id="E_COMP" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" value="СРАВНЕНИЕ" vertex="1">
+        <mxCell id="E_COMP" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=13;" value="СРАВНЕНИЕ" vertex="1">
           <mxGeometry height="60" width="200" x="1390" y="260" as="geometry" />
         </mxCell>
-        <mxCell id="E_PARAMS" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" value="НАБОР ПАРАМЕТРОВ" vertex="1">
+        <mxCell id="E_PARAMS" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=13;" value="НАБОР ПАРАМЕТРОВ" vertex="1">
           <mxGeometry height="60" width="220" x="280" y="840" as="geometry" />
         </mxCell>
-        <mxCell id="E_RESULT" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" value="РЕЗУЛЬТАТ СИМУЛЯЦИИ" vertex="1">
+        <mxCell id="E_RESULT" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=13;" value="РЕЗУЛЬТАТ СИМУЛЯЦИИ" vertex="1">
           <mxGeometry height="60" width="230" x="1150" y="840" as="geometry" />
         </mxCell>
-        <mxCell id="E_VALID" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=2;dashed=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;" value="РЕЗУЛЬТАТ ВАЛИДАЦИИ" vertex="1">
+        <mxCell id="E_VALID" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=2;dashed=1;fontSize=12;" value="РЕЗУЛЬТАТ ВАЛИДАЦИИ" vertex="1">
           <mxGeometry height="60" width="220" x="180" y="1110" as="geometry" />
         </mxCell>
-        <mxCell id="E_SESS" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=2;dashed=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;" value="СЕССИЯ СИМУЛЯЦИИ" vertex="1">
-          <mxGeometry height="60" width="210" x="795" y="840" as="geometry" />
-        </mxCell>
-        <mxCell id="E_CHART" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=2;dashed=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;" value="ГРАФИК" vertex="1">
-          <mxGeometry height="60" width="160" x="1480" y="840" as="geometry" />
-        </mxCell>
-        <mxCell id="R_COND" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="проводит" vertex="1">
+        <mxCell id="R_COND" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="проводит" vertex="1">
           <mxGeometry height="80" width="140" x="780" y="385" as="geometry" />
         </mxCell>
-        <mxCell id="R_USE" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="использует" vertex="1">
+        <mxCell id="R_USE" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="использует" vertex="1">
           <mxGeometry height="80" width="140" x="455" y="520" as="geometry" />
         </mxCell>
-        <mxCell id="R_HAS" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="имеет" vertex="1">
+        <mxCell id="R_HAS" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="имеет" vertex="1">
           <mxGeometry height="80" width="140" x="555" y="675" as="geometry" />
         </mxCell>
-        <mxCell id="R_SESS_REL" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="отслеживается через" vertex="1">
-          <mxGeometry height="80" width="150" x="825" y="675" as="geometry" />
-        </mxCell>
-        <mxCell id="R_PROD" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="порождает" vertex="1">
+        <mxCell id="R_PROD" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="порождает" vertex="1">
           <mxGeometry height="80" width="140" x="1040" y="675" as="geometry" />
         </mxCell>
-        <mxCell id="R_CREATE" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="создаёт" vertex="1">
+        <mxCell id="R_CREATE" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="создаёт" vertex="1">
           <mxGeometry height="80" width="140" x="1100" y="250" as="geometry" />
         </mxCell>
-        <mxCell id="R_INCL" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="включает" vertex="1">
+        <mxCell id="R_INCL" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="включает" vertex="1">
           <mxGeometry height="80" width="140" x="1100" y="385" as="geometry" />
         </mxCell>
-        <mxCell id="R_VALID_REL" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="проверяется через" vertex="1">
+        <mxCell id="R_VALID_REL" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="проверяется через" vertex="1">
           <mxGeometry height="80" width="150" x="275" y="960" as="geometry" />
         </mxCell>
-        <mxCell id="R_VIS" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="визуализируется как" vertex="1">
-          <mxGeometry height="80" width="160" x="1345" y="830" as="geometry" />
-        </mxCell>
-        <mxCell id="A_U_ID" parent="1" style="ellipse;whiteSpace=wrap;html=1;fontStyle=4;fillColor=#f5f5f5;strokeColor=#666666;" value="id" vertex="1">
+        <mxCell id="A_U_ID" parent="1" style="ellipse;whiteSpace=wrap;html=1;fontStyle=4;" value="id" vertex="1">
           <mxGeometry height="44" width="80" x="640" y="140" as="geometry" />
         </mxCell>
-        <mxCell id="A_U_EMAIL" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="email" vertex="1">
+        <mxCell id="A_U_EMAIL" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="email" vertex="1">
           <mxGeometry height="44" width="100" x="740" y="140" as="geometry" />
         </mxCell>
-        <mxCell id="A_U_NAME" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="имя" vertex="1">
+        <mxCell id="A_U_NAME" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="имя" vertex="1">
           <mxGeometry height="44" width="80" x="858" y="140" as="geometry" />
         </mxCell>
-        <mxCell id="A_U_ROLE" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="роль" vertex="1">
+        <mxCell id="A_U_ROLE" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="роль" vertex="1">
           <mxGeometry height="44" width="80" x="958" y="160" as="geometry" />
         </mxCell>
-        <mxCell id="A_M_ID" parent="1" style="ellipse;whiteSpace=wrap;html=1;fontStyle=4;fillColor=#f5f5f5;strokeColor=#666666;" value="id" vertex="1">
-          <mxGeometry height="44" width="80" x="0" y="430" as="geometry" />
+        <mxCell id="A_M_ID" parent="1" style="ellipse;whiteSpace=wrap;html=1;fontStyle=4;" value="id" vertex="1">
+          <mxGeometry height="44" width="80" y="430" as="geometry" />
         </mxCell>
-        <mxCell id="A_M_NAME" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="название" vertex="1">
+        <mxCell id="A_M_NAME" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="название" vertex="1">
           <mxGeometry height="44" width="110" x="-15" y="484" as="geometry" />
         </mxCell>
-        <mxCell id="A_M_EQ" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="уравнения" vertex="1">
+        <mxCell id="A_M_EQ" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="уравнения" vertex="1">
           <mxGeometry height="44" width="110" x="-15" y="540" as="geometry" />
         </mxCell>
-        <mxCell id="A_M_SOLVER" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="тип солвера" vertex="1">
+        <mxCell id="A_M_SOLVER" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="тип солвера" vertex="1">
           <mxGeometry height="44" width="120" x="-10" y="596" as="geometry" />
         </mxCell>
-        <mxCell id="A_E_ID" parent="1" style="ellipse;whiteSpace=wrap;html=1;fontStyle=4;fillColor=#f5f5f5;strokeColor=#666666;" value="id" vertex="1">
+        <mxCell id="A_E_ID" parent="1" style="ellipse;whiteSpace=wrap;html=1;fontStyle=4;" value="id" vertex="1">
           <mxGeometry height="44" width="80" x="1080" y="470" as="geometry" />
         </mxCell>
-        <mxCell id="A_E_NAME" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="название" vertex="1">
+        <mxCell id="A_E_NAME" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="название" vertex="1">
           <mxGeometry height="44" width="110" x="1070" y="524" as="geometry" />
         </mxCell>
-        <mxCell id="A_E_STATUS" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="статус" vertex="1">
+        <mxCell id="A_E_STATUS" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="статус" vertex="1">
           <mxGeometry height="44" width="100" x="1080" y="580" as="geometry" />
         </mxCell>
-        <mxCell id="A_E_PUB" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="публичный" vertex="1">
+        <mxCell id="A_E_PUB" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="публичный" vertex="1">
           <mxGeometry height="44" width="120" x="1070" y="636" as="geometry" />
         </mxCell>
-        <mxCell id="A_C_ID" parent="1" style="ellipse;whiteSpace=wrap;html=1;fontStyle=4;fillColor=#f5f5f5;strokeColor=#666666;" value="id" vertex="1">
+        <mxCell id="A_C_ID" parent="1" style="ellipse;whiteSpace=wrap;html=1;fontStyle=4;" value="id" vertex="1">
           <mxGeometry height="44" width="80" x="1610" y="220" as="geometry" />
         </mxCell>
-        <mxCell id="A_C_NAME" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="название" vertex="1">
+        <mxCell id="A_C_NAME" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="название" vertex="1">
           <mxGeometry height="44" width="110" x="1600" y="278" as="geometry" />
         </mxCell>
-        <mxCell id="A_P_ID" parent="1" style="ellipse;whiteSpace=wrap;html=1;fontStyle=4;fillColor=#f5f5f5;strokeColor=#666666;" value="id" vertex="1">
+        <mxCell id="A_P_ID" parent="1" style="ellipse;whiteSpace=wrap;html=1;fontStyle=4;" value="id" vertex="1">
           <mxGeometry height="44" width="80" x="130" y="780" as="geometry" />
         </mxCell>
-        <mxCell id="A_P_VALS" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="значения" vertex="1">
+        <mxCell id="A_P_VALS" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="значения" vertex="1">
           <mxGeometry height="44" width="110" x="110" y="836" as="geometry" />
         </mxCell>
-        <mxCell id="A_P_START" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="начало / конец" vertex="1">
+        <mxCell id="A_P_START" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="начало / конец" vertex="1">
           <mxGeometry height="44" width="130" x="100" y="894" as="geometry" />
         </mxCell>
-        <mxCell id="A_P_STEP" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="шаг" vertex="1">
+        <mxCell id="A_P_STEP" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="шаг" vertex="1">
           <mxGeometry height="44" width="80" x="150" y="952" as="geometry" />
         </mxCell>
-        <mxCell id="A_R_ID" parent="1" style="ellipse;whiteSpace=wrap;html=1;fontStyle=4;fillColor=#f5f5f5;strokeColor=#666666;" value="id" vertex="1">
+        <mxCell id="A_R_ID" parent="1" style="ellipse;whiteSpace=wrap;html=1;fontStyle=4;" value="id" vertex="1">
           <mxGeometry height="44" width="80" x="1500" y="780" as="geometry" />
         </mxCell>
-        <mxCell id="A_R_TS" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="временной ряд" vertex="1">
-          <mxGeometry height="44" width="140" x="1490" y="836" as="geometry" />
-        </mxCell>
-        <mxCell id="A_R_VARS" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="переменные" vertex="1">
+        <mxCell id="A_R_VARS" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="результат" vertex="1">
           <mxGeometry height="44" width="130" x="1500" y="892" as="geometry" />
         </mxCell>
-        <mxCell id="LA_U1" edge="1" parent="1" source="E_USER" style="endArrow=none;html=1;" target="A_U_ID"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="LA_U2" edge="1" parent="1" source="E_USER" style="endArrow=none;html=1;" target="A_U_EMAIL"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="LA_U3" edge="1" parent="1" source="E_USER" style="endArrow=none;html=1;" target="A_U_NAME"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="LA_U4" edge="1" parent="1" source="E_USER" style="endArrow=none;html=1;" target="A_U_ROLE"><mxGeometry relative="1" as="geometry" /></mxCell>
-
-        <mxCell id="LA_M1" edge="1" parent="1" source="E_MODEL" style="endArrow=none;html=1;" target="A_M_ID"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="LA_M2" edge="1" parent="1" source="E_MODEL" style="endArrow=none;html=1;" target="A_M_NAME"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="LA_M3" edge="1" parent="1" source="E_MODEL" style="endArrow=none;html=1;" target="A_M_EQ"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="LA_M4" edge="1" parent="1" source="E_MODEL" style="endArrow=none;html=1;" target="A_M_SOLVER"><mxGeometry relative="1" as="geometry" /></mxCell>
-
-        <mxCell id="LA_E1" edge="1" parent="1" source="E_EXP" style="endArrow=none;html=1;" target="A_E_ID"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="LA_E2" edge="1" parent="1" source="E_EXP" style="endArrow=none;html=1;" target="A_E_NAME"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="LA_E3" edge="1" parent="1" source="E_EXP" style="endArrow=none;html=1;" target="A_E_STATUS"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="LA_E4" edge="1" parent="1" source="E_EXP" style="endArrow=none;html=1;" target="A_E_PUB"><mxGeometry relative="1" as="geometry" /></mxCell>
-
-        <mxCell id="LA_C1" edge="1" parent="1" source="E_COMP" style="endArrow=none;html=1;" target="A_C_ID"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="LA_C2" edge="1" parent="1" source="E_COMP" style="endArrow=none;html=1;" target="A_C_NAME"><mxGeometry relative="1" as="geometry" /></mxCell>
-
-        <mxCell id="LA_P1" edge="1" parent="1" source="E_PARAMS" style="endArrow=none;html=1;" target="A_P_ID"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="LA_P2" edge="1" parent="1" source="E_PARAMS" style="endArrow=none;html=1;" target="A_P_VALS"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="LA_P3" edge="1" parent="1" source="E_PARAMS" style="endArrow=none;html=1;" target="A_P_START"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="LA_P4" edge="1" parent="1" source="E_PARAMS" style="endArrow=none;html=1;" target="A_P_STEP"><mxGeometry relative="1" as="geometry" /></mxCell>
-
-        <mxCell id="LA_R1" edge="1" parent="1" source="E_RESULT" style="endArrow=none;html=1;" target="A_R_ID"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="LA_R2" edge="1" parent="1" source="E_RESULT" style="endArrow=none;html=1;" target="A_R_TS"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="LA_R3" edge="1" parent="1" source="E_RESULT" style="endArrow=none;html=1;" target="A_R_VARS"><mxGeometry relative="1" as="geometry" /></mxCell>
-
-        <mxCell id="L_U_COND" edge="1" parent="1" source="E_USER" style="endArrow=none;html=1;" target="R_COND"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="L_COND_E" edge="1" parent="1" source="R_COND" style="endArrow=none;html=1;" target="E_EXP"><mxGeometry relative="1" as="geometry" /></mxCell>
-
-        <mxCell id="L_M_USE" edge="1" parent="1" source="E_MODEL" style="endArrow=none;html=1;" target="R_USE"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="L_USE_E" edge="1" parent="1" source="R_USE" style="endArrow=none;html=1;" target="E_EXP"><mxGeometry relative="1" as="geometry" /></mxCell>
-
-        <mxCell id="L_E_HAS" edge="1" parent="1" source="E_EXP" style="endArrow=none;html=1;" target="R_HAS"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="L_HAS_P" edge="1" parent="1" source="R_HAS" style="endArrow=none;html=1;" target="E_PARAMS"><mxGeometry relative="1" as="geometry" /></mxCell>
-
-        <mxCell id="L_E_SESS" edge="1" parent="1" source="E_EXP" style="endArrow=none;html=1;" target="R_SESS_REL"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="L_SESS_S" edge="1" parent="1" source="R_SESS_REL" style="endArrow=none;html=1;" target="E_SESS"><mxGeometry relative="1" as="geometry" /></mxCell>
-
-        <mxCell id="L_E_PROD" edge="1" parent="1" source="E_EXP" style="endArrow=none;html=1;" target="R_PROD"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="L_PROD_R" edge="1" parent="1" source="R_PROD" style="endArrow=none;html=1;" target="E_RESULT"><mxGeometry relative="1" as="geometry" /></mxCell>
-
-        <mxCell id="L_U_CR" edge="1" parent="1" source="E_USER" style="endArrow=none;html=1;" target="R_CREATE"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="L_CR_C" edge="1" parent="1" source="R_CREATE" style="endArrow=none;html=1;" target="E_COMP"><mxGeometry relative="1" as="geometry" /></mxCell>
-
-        <mxCell id="L_C_INCL" edge="1" parent="1" source="E_COMP" style="endArrow=none;html=1;" target="R_INCL"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="L_INCL_E" edge="1" parent="1" source="R_INCL" style="endArrow=none;html=1;" target="E_EXP"><mxGeometry relative="1" as="geometry" /></mxCell>
-
-        <mxCell id="L_P_VAL" edge="1" parent="1" source="E_PARAMS" style="endArrow=none;html=1;" target="R_VALID_REL"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="L_VAL_V" edge="1" parent="1" source="R_VALID_REL" style="endArrow=none;html=1;" target="E_VALID"><mxGeometry relative="1" as="geometry" /></mxCell>
-
-        <mxCell id="L_R_VIS" edge="1" parent="1" source="E_RESULT" style="endArrow=none;html=1;" target="R_VIS"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="L_VIS_CH" edge="1" parent="1" source="R_VIS" style="endArrow=none;html=1;" target="E_CHART"><mxGeometry relative="1" as="geometry" /></mxCell>
-
-        <mxCell id="T_COND_1" parent="1" style="text;html=1;align=center;fontStyle=1;" value="1" vertex="1"><mxGeometry height="20" width="30" x="865" y="340" as="geometry" /></mxCell>
-        <mxCell id="T_COND_N" parent="1" style="text;html=1;align=center;fontStyle=1;" value="N" vertex="1"><mxGeometry height="20" width="30" x="865" y="475" as="geometry" /></mxCell>
-
-        <mxCell id="T_USE_1" parent="1" style="text;html=1;align=center;fontStyle=1;" value="1" vertex="1"><mxGeometry height="20" width="30" x="310" y="545" as="geometry" /></mxCell>
-        <mxCell id="T_USE_N" parent="1" style="text;html=1;align=center;fontStyle=1;" value="N" vertex="1"><mxGeometry height="20" width="30" x="680" y="545" as="geometry" /></mxCell>
-
-        <mxCell id="T_HAS_1E" parent="1" style="text;html=1;align=center;fontStyle=1;" value="1" vertex="1"><mxGeometry height="20" width="30" x="770" y="605" as="geometry" /></mxCell>
-        <mxCell id="T_HAS_1P" parent="1" style="text;html=1;align=center;fontStyle=1;" value="1" vertex="1"><mxGeometry height="20" width="30" x="480" y="815" as="geometry" /></mxCell>
-
-        <mxCell id="T_SESS_1" parent="1" style="text;html=1;align=center;fontStyle=1;" value="1" vertex="1"><mxGeometry height="20" width="30" x="880" y="605" as="geometry" /></mxCell>
-        <mxCell id="T_SESS_01" parent="1" style="text;html=1;align=center;fontStyle=1;" value="0..1" vertex="1"><mxGeometry height="20" width="40" x="880" y="815" as="geometry" /></mxCell>
-
-        <mxCell id="T_PROD_1" parent="1" style="text;html=1;align=center;fontStyle=1;" value="1" vertex="1"><mxGeometry height="20" width="30" x="960" y="605" as="geometry" /></mxCell>
-        <mxCell id="T_PROD_01" parent="1" style="text;html=1;align=center;fontStyle=1;" value="0..1" vertex="1"><mxGeometry height="20" width="40" x="1140" y="815" as="geometry" /></mxCell>
-
-        <mxCell id="T_CR_1" parent="1" style="text;html=1;align=center;fontStyle=1;" value="1" vertex="1"><mxGeometry height="20" width="30" x="1010" y="270" as="geometry" /></mxCell>
-        <mxCell id="T_CR_N" parent="1" style="text;html=1;align=center;fontStyle=1;" value="N" vertex="1"><mxGeometry height="20" width="30" x="1320" y="270" as="geometry" /></mxCell>
-
-        <mxCell id="T_INCL_M" parent="1" style="text;html=1;align=center;fontStyle=1;" value="M" vertex="1"><mxGeometry height="20" width="30" x="1350" y="310" as="geometry" /></mxCell>
-        <mxCell id="T_INCL_N" parent="1" style="text;html=1;align=center;fontStyle=1;" value="N" vertex="1"><mxGeometry height="20" width="30" x="1020" y="490" as="geometry" /></mxCell>
-
-        <mxCell id="T_VAL_1" parent="1" style="text;html=1;align=center;fontStyle=1;" value="1" vertex="1"><mxGeometry height="20" width="30" x="340" y="880" as="geometry" /></mxCell>
-        <mxCell id="T_VAL_01" parent="1" style="text;html=1;align=center;fontStyle=1;" value="0..1" vertex="1"><mxGeometry height="20" width="40" x="270" y="1080" as="geometry" /></mxCell>
-
-        <mxCell id="T_VIS_1L" parent="1" style="text;html=1;align=center;fontStyle=1;" value="1" vertex="1"><mxGeometry height="20" width="30" x="1385" y="858" as="geometry" /></mxCell>
-        <mxCell id="T_VIS_1R" parent="1" style="text;html=1;align=center;fontStyle=1;" value="1" vertex="1"><mxGeometry height="20" width="30" x="1555" y="858" as="geometry" /></mxCell>
-
+        <mxCell id="LA_U1" edge="1" parent="1" source="E_USER" style="endArrow=none;html=1;" target="A_U_ID">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LA_U2" edge="1" parent="1" source="E_USER" style="endArrow=none;html=1;" target="A_U_EMAIL">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LA_U3" edge="1" parent="1" source="E_USER" style="endArrow=none;html=1;" target="A_U_NAME">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LA_U4" edge="1" parent="1" source="E_USER" style="endArrow=none;html=1;" target="A_U_ROLE">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LA_M1" edge="1" parent="1" source="E_MODEL" style="endArrow=none;html=1;" target="A_M_ID">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LA_M2" edge="1" parent="1" source="E_MODEL" style="endArrow=none;html=1;" target="A_M_NAME">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LA_M3" edge="1" parent="1" source="E_MODEL" style="endArrow=none;html=1;" target="A_M_EQ">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LA_M4" edge="1" parent="1" source="E_MODEL" style="endArrow=none;html=1;" target="A_M_SOLVER">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LA_E1" edge="1" parent="1" source="E_EXP" style="endArrow=none;html=1;" target="A_E_ID">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LA_E2" edge="1" parent="1" source="E_EXP" style="endArrow=none;html=1;" target="A_E_NAME">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LA_E3" edge="1" parent="1" source="E_EXP" style="endArrow=none;html=1;" target="A_E_STATUS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LA_E4" edge="1" parent="1" source="E_EXP" style="endArrow=none;html=1;" target="A_E_PUB">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LA_C1" edge="1" parent="1" source="E_COMP" style="endArrow=none;html=1;" target="A_C_ID">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LA_C2" edge="1" parent="1" source="E_COMP" style="endArrow=none;html=1;" target="A_C_NAME">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LA_P1" edge="1" parent="1" source="E_PARAMS" style="endArrow=none;html=1;" target="A_P_ID">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LA_P2" edge="1" parent="1" source="E_PARAMS" style="endArrow=none;html=1;" target="A_P_VALS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LA_P3" edge="1" parent="1" source="E_PARAMS" style="endArrow=none;html=1;" target="A_P_START">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LA_P4" edge="1" parent="1" source="E_PARAMS" style="endArrow=none;html=1;" target="A_P_STEP">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LA_R1" edge="1" parent="1" source="E_RESULT" style="endArrow=none;html=1;" target="A_R_ID">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LA_R3" edge="1" parent="1" source="E_RESULT" style="endArrow=none;html=1;" target="A_R_VARS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="L_U_COND" edge="1" parent="1" source="E_USER" style="endArrow=none;html=1;" target="R_COND">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="L_COND_E" edge="1" parent="1" source="R_COND" style="endArrow=none;html=1;" target="E_EXP">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="L_M_USE" edge="1" parent="1" source="E_MODEL" style="endArrow=none;html=1;" target="R_USE">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="L_USE_E" edge="1" parent="1" source="R_USE" style="endArrow=none;html=1;" target="E_EXP">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="L_E_HAS" edge="1" parent="1" source="E_EXP" style="endArrow=none;html=1;" target="R_HAS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="L_HAS_P" edge="1" parent="1" source="R_HAS" style="endArrow=none;html=1;" target="E_PARAMS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="L_E_PROD" edge="1" parent="1" source="E_EXP" style="endArrow=none;html=1;" target="R_PROD">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="L_PROD_R" edge="1" parent="1" source="R_PROD" style="endArrow=none;html=1;" target="E_RESULT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="L_U_CR" edge="1" parent="1" source="E_USER" style="endArrow=none;html=1;" target="R_CREATE">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="L_CR_C" edge="1" parent="1" source="R_CREATE" style="endArrow=none;html=1;" target="E_COMP">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="L_C_INCL" edge="1" parent="1" source="E_COMP" style="endArrow=none;html=1;" target="R_INCL">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="L_INCL_E" edge="1" parent="1" source="R_INCL" style="endArrow=none;html=1;" target="E_EXP">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="L_P_VAL" edge="1" parent="1" source="E_PARAMS" style="endArrow=none;html=1;" target="R_VALID_REL">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="L_VAL_V" edge="1" parent="1" source="R_VALID_REL" style="endArrow=none;html=1;" target="E_VALID">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="L_R_VIS" edge="1" parent="1" source="E_RESULT" style="endArrow=none;html=1;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1345" y="870" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="T_COND_1" parent="1" style="text;html=1;align=center;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry height="20" width="30" x="865" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="T_COND_N" parent="1" style="text;html=1;align=center;fontStyle=1;" value="N" vertex="1">
+          <mxGeometry height="20" width="30" x="865" y="475" as="geometry" />
+        </mxCell>
+        <mxCell id="T_USE_1" parent="1" style="text;html=1;align=center;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry height="20" width="30" x="310" y="545" as="geometry" />
+        </mxCell>
+        <mxCell id="T_USE_N" parent="1" style="text;html=1;align=center;fontStyle=1;" value="N" vertex="1">
+          <mxGeometry height="20" width="30" x="680" y="545" as="geometry" />
+        </mxCell>
+        <mxCell id="T_HAS_1E" parent="1" style="text;html=1;align=center;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry height="20" width="30" x="770" y="605" as="geometry" />
+        </mxCell>
+        <mxCell id="T_HAS_1P" parent="1" style="text;html=1;align=center;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry height="20" width="30" x="480" y="815" as="geometry" />
+        </mxCell>
+        <mxCell id="T_SESS_1" parent="1" style="text;html=1;align=center;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry height="20" width="30" x="880" y="605" as="geometry" />
+        </mxCell>
+        <mxCell id="T_PROD_1" parent="1" style="text;html=1;align=center;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry height="20" width="30" x="960" y="605" as="geometry" />
+        </mxCell>
+        <mxCell id="T_CR_1" parent="1" style="text;html=1;align=center;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry height="20" width="30" x="1010" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="T_CR_N" parent="1" style="text;html=1;align=center;fontStyle=1;" value="N" vertex="1">
+          <mxGeometry height="20" width="30" x="1320" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="T_INCL_M" parent="1" style="text;html=1;align=center;fontStyle=1;" value="M" vertex="1">
+          <mxGeometry height="20" width="30" x="1350" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="T_INCL_N" parent="1" style="text;html=1;align=center;fontStyle=1;" value="N" vertex="1">
+          <mxGeometry height="20" width="30" x="1020" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="T_VAL_01" parent="1" style="text;html=1;align=center;fontStyle=1;" value="0..1" vertex="1">
+          <mxGeometry height="20" width="40" x="270" y="1080" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>

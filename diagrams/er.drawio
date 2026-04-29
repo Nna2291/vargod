@@ -100,7 +100,7 @@
         <mxCell id="A_R_ID" parent="1" style="ellipse;whiteSpace=wrap;html=1;fontStyle=4;" value="id" vertex="1">
           <mxGeometry height="44" width="80" x="1525" y="854" as="geometry" />
         </mxCell>
-        <mxCell id="A_R_VARS" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="название" vertex="1">
+        <mxCell id="A_R_VARS" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="результат" vertex="1">
           <mxGeometry height="44" width="130" x="1500" y="976" as="geometry" />
         </mxCell>
         <mxCell id="LA_U1" edge="1" parent="1" source="E_USER" style="endArrow=none;html=1;" target="A_U_ID">
@@ -361,7 +361,7 @@
         <mxCell id="T_VPROD_N" parent="1" style="text;html=1;align=center;fontStyle=1;" value="N" vertex="1">
           <mxGeometry height="20" width="30" x="390" y="1115" as="geometry" />
         </mxCell>
-        <mxCell id="8AkqyyN7lmO0p1EW5RkT-3" edge="1" parent="1" source="8AkqyyN7lmO0p1EW5RkT-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeColor=default;endArrow=none;endFill=0;" target="E_RESULT">
+        <mxCell id="8AkqyyN7lmO0p1EW5RkT-3" edge="1" parent="1" source="8AkqyyN7lmO0p1EW5RkT-1" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeColor=default;endArrow=none;endFill=0;" target="E_RESULT">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="8AkqyyN7lmO0p1EW5RkT-1" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="название" vertex="1">

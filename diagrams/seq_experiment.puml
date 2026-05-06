@@ -13,69 +13,86 @@ database "PostgreSQL" as DB
 
 == Выбор модели ==
 
-User -> SPA : Открыть «Новый эксперимент»
-SPA -> Ctrl : GET /api/models
-Ctrl -> ModelSvc : listAll()
-ModelSvc -> DB : SELECT * FROM model_templates
-DB --> ModelSvc : [ModelTemplateEntity]
-ModelSvc --> Ctrl : List<ModelTemplate>
-Ctrl --> SPA : 200 OK [ModelTemplateDto]
-SPA --> User : Каталог моделей
+User -> SPA ++ : Открыть «Новый эксперимент»
+SPA -> Ctrl ++ : GET /api/models
+Ctrl -> ModelSvc ++ : listAll()
+ModelSvc -> DB ++ : SELECT * FROM model_templates
+DB --> ModelSvc -- : [ModelTemplateEntity]
+ModelSvc --> Ctrl -- : List<ModelTemplate>
+Ctrl --> SPA -- : 200 OK [ModelTemplateDto]
+SPA --> User -- : Каталог моделей
 
-User -> SPA : Выбрать модель «Лотка-Вольтерра»
-SPA -> Ctrl : GET /api/models/{id}
-Ctrl -> ModelSvc : getById(id)
-ModelSvc -> DB : SELECT model, validators WHERE id = ?
-DB --> ModelSvc : ModelTemplateEntity + ValidatorEntity[]
-ModelSvc --> Ctrl : ModelTemplate (с валидаторами)
-Ctrl --> SPA : 200 OK [ModelTemplateDto]
-SPA --> User : Форма параметров с подсказками
+User -> SPA ++ : Выбрать модель «Лотка-Вольтерра»
+SPA -> Ctrl ++ : GET /api/models/{id}
+Ctrl -> ModelSvc ++ : getById(id)
+ModelSvc -> DB ++ : SELECT model, validators WHERE id = ?
+DB --> ModelSvc -- : ModelTemplateEntity + ValidatorEntity[]
+ModelSvc --> Ctrl -- : ModelTemplate (с валидаторами)
+Ctrl --> SPA -- : 200 OK [ModelTemplateDto]
+SPA --> User -- : Форма параметров с подсказками
 
 == Запуск симуляции ==
 
-User -> SPA : Заполнить параметры, нажать «Запустить»
-SPA -> Ctrl : POST /api/experiments\n{modelTemplateId, parameters, tStart, tEnd, step}
-Ctrl -> Svc : create(request, userId)
+User -> SPA ++ : Заполнить параметры, нажать «Запустить»
+SPA -> Ctrl ++ : POST /api/experiments\n{modelTemplateId, parameters, tStart, tEnd, step}
+Ctrl -> Svc ++ : create(request, userId)
 
-Svc -> VE : validate(parameterSet, model.validators)
+Svc -> VE ++ : validate(parameters, model.validators)
 
 loop по каждому валидатору
-    VE -> VE : applyCheck(validator, params)
+    VE -> VE : applyRangeCheck / applyConstraintCheck
 end
 
-alt Валидация провалена
-    VE --> Svc : List<ValidationResult(FAIL)>
-    Svc --> Ctrl : ValidationException
+VE --> Svc -- : List<ValidationResult>
+
+break хотя бы один ValidationResult = FAIL
+    Svc --> Ctrl : ValidationException(errors)
+    deactivate Svc
     Ctrl --> SPA : 422 Unprocessable Entity\n{errors: [...]}
+    deactivate Ctrl
     SPA --> User : Подсветить ошибочные поля
-else Валидация прошла
-    VE --> Svc : List<ValidationResult(PASS)>
-
-    Svc -> Repo : save(experiment{status=PENDING})
-    Repo -> DB : INSERT INTO experiments
-    DB --> Repo : ExperimentEntity{id}
-
-    Svc -> SE : solve(modelTemplate, parameterSet)
-    note right of SE : Kotlin coroutine,\nRunge-Kutta RK45\n(Apache Commons Math)
-    SE --> Svc : SimulationResult{timePoints, variables}
-
-    Svc -> Repo : save(simulationResult)
-    Svc -> Repo : update(experiment{status=COMPLETED})
-    Repo -> DB : INSERT INTO simulation_results\nUPDATE experiments SET status = 'COMPLETED'
-
-    Svc --> Ctrl : Experiment (с результатом)
-    Ctrl --> SPA : 201 Created [ExperimentDto + SimulationResultDto]
-    SPA --> User : Интерактивный график временных рядов
+    deactivate SPA
 end
+
+Svc -> Repo ++ : save(experiment{status=PENDING})
+Repo -> DB ++ : INSERT INTO experiments
+DB --> Repo -- : ExperimentEntity{id}
+Repo --> Svc -- :
+
+Svc -> Repo ++ : update(experiment{status=RUNNING})
+Repo -> DB ++ : UPDATE experiments SET status = 'RUNNING'
+DB --> Repo --
+Repo --> Svc --
+
+Svc -> SE ++ : solve(modelTemplate, parameterSet)
+note right of SE : Runge-Kutta RK45\n(Apache Commons Math).\nOdeModel из ModelRegistry\nпо modelTemplate.code.
+SE --> Svc -- : SimulationResult{timePoints, variables}
+
+Svc -> Repo ++ : save(simulationResult)
+Repo -> DB ++ : INSERT INTO simulation_results
+DB --> Repo --
+Repo --> Svc --
+
+Svc -> Repo ++ : update(experiment{status=COMPLETED})
+Repo -> DB ++ : UPDATE experiments SET status = 'COMPLETED'
+DB --> Repo --
+Repo --> Svc --
+
+Svc --> Ctrl -- : Experiment (с результатом)
+Ctrl --> SPA -- : 201 Created [ExperimentDto + SimulationResultDto]
+SPA --> User -- : Интерактивный график временных рядов
 
 == Сохранение эксперимента ==
 
-User -> SPA : Ввести название, нажать «Сохранить»
-SPA -> Ctrl : PATCH /api/experiments/{id}\n{name: "Базовая динамика хищник-жертва"}
-Ctrl -> Svc : publish(id, userId)
-Svc -> Repo : update(experiment{name, isPublic})
-Repo -> DB : UPDATE experiments SET name = ?, is_public = ?
-Ctrl --> SPA : 200 OK [ExperimentDto]
-SPA --> User : Эксперимент сохранён в личном кабинете
+User -> SPA ++ : Ввести название, нажать «Сохранить»
+SPA -> Ctrl ++ : PATCH /api/experiments/{id}\n{name: "Базовая динамика хищник-жертва"}
+Ctrl -> Svc ++ : publish(id, userId)
+Svc -> Repo ++ : update(experiment{name, isPublic})
+Repo -> DB ++ : UPDATE experiments SET name = ?, is_public = ?
+DB --> Repo --
+Repo --> Svc --
+Svc --> Ctrl -- : Experiment
+Ctrl --> SPA -- : 200 OK [ExperimentDto]
+SPA --> User -- : Эксперимент сохранён в личном кабинете
 
 @enduml

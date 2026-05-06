@@ -9,8 +9,8 @@ Container(spa, "Web SPA", "TypeScript, React", "Фронтенд")
 ContainerDb(db, "PostgreSQL", "", "СУБД")
 
 Container_Boundary(api, "API Server") {
-    Component(controllers, "REST Controllers", "Spring MVC (Kotlin)", "ModelController, ExperimentController, ComparisonController, DatasetController. Маршрутизация HTTP, сериализация DTO, аутентификация (Spring Security).")
-    Component(services, "Service Layer", "Kotlin", "ExperimentService, SimulationService, ModelService, ValidationService, ComparisonService. Оркестрация бизнес-логики. Реализует принцип инверсии зависимостей через интерфейсы.")
+    Component(controllers, "REST Controllers", "Spring MVC (Kotlin)", "ModelController, ExperimentController, ComparisonController, DatasetController, InterpolationController, ValidatorController. Маршрутизация HTTP, сериализация DTO, аутентификация (Spring Security).")
+    Component(services, "Service Layer", "Kotlin", "ExperimentService, ModelService, ComparisonService, DatasetService, InterpolationService, ValidatorService. Оркестрация бизнес-логики через интерфейсы (DI). Контроллеры и сервисы зависят от интерфейсов, что позволяет заменить реализацию без изменения вышестоящих слоёв.")
     Component(simulation, "Simulation Engine", "Kotlin, Apache Commons Math", "Численное решение систем ODE методами Рунге-Кутты (RK45, RK23). Реализует SimulationEngine. Через ModelRegistry получает реализацию OdeModel по коду модели (SIR, LOTKA_VOLTERRA, ...) — уравнения зашиты в коде, не в БД.")
     Component(validation, "Validation Engine", "Kotlin", "Применяет набор Validator к ParameterSet. Поддерживает RANGE-проверки и CONSTRAINT-инварианты (например, S+I+R=N для SIR). Реализует интерфейс ValidationEngine.")
     Component(interpolation, "Interpolation Engine", "Kotlin, Apache Commons Math", "Численный анализ загруженных пользователем таблиц данных: интерполяция (linear, cubic spline, Lagrange, Newton) и экстраполяция (linear, polynomial, exponential). Через InterpolationMethodRegistry получает реализацию метода по коду. Отдельный контур, независимый от ODE-симуляции.")

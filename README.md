@@ -93,3 +93,149 @@ Vargod — это веб-платформа для проведения вычи
 ---
 ### Процесс 2. Сравнение экспериментов
 ![BPMN: сравнение экспериментов](img/diagram_compar.svg)
+
+---
+
+# Лабораторная работа № 2 — Проектирование. UML и C4
+
+## 1. Тип приложения и технологический стек
+
+**Тип приложения:** Web SPA (Single Page Application).
+
+Пользователь работает в браузере, переходы между разделами (каталог моделей, форма эксперимента, график результатов, сравнение, анализ данных) реализованы через клиентский роутинг.
+
+**Vargod покрывает два независимых контура численной работы:**
+1. **ODE-симуляция** — выбор одной из предопределённых моделей (SIR, Лотка-Вольтерра, логистический рост, …), задание параметров, запуск Рунге-Кутты, сравнение экспериментов.
+2. **Анализ табличных данных** — загрузка пользовательской таблицы (CSV/JSON), применение методов **интерполяции** (linear, cubic spline, Lagrange, Newton) и **экстраполяции** (linear, polynomial, exponential) к выбранной колонке.
+
+Контуры архитектурно симметричны: оба используют шаблон «реестр реализаций в коде» — `ModelRegistry` для ODE, `InterpolationMethodRegistry` для методов анализа. Новый метод (или новая модель) = новый Spring-бин, никакого парсера выражений, никакого пользовательского ввода формул.
+
+| Слой | Технология |
+|---|---|
+| **Frontend** | TypeScript, React, Zustand |
+| **Backend** | Kotlin, Spring Boot |
+| **ODE-симуляция** | Apache Commons Math (Kotlin) | 
+| **СУБД** | PostgreSQL | 
+| **ORM / доступ к БД** | Spring Data JPA (Hibernate) |
+
+## 2. Нотация C4 — уровни L1 и L2
+
+### L1 — Контекст системы
+
+Система взаимодействует с двумя типами пользователей: Исследователь (авторизован, создаёт эксперименты) и Гость (просматривает публичные данные).
+
+![C4 L1](img/c4_l1_context.svg)
+
+### L2 — Контейнеры
+
+
+![C4 L2](img/c4_l2_container.svg)
+
+## 3. Нотация C4 — уровень L3 (компоненты)
+
+### Backend
+
+Четыре компонента, разделённых по зонам ответственности:
+
+- **REST Controllers** — маршрутизация HTTP, сериализация DTO, Spring Security.
+- **Service Layer** — оркестрация бизнес-логики. Контроллеры и сервисы зависят от интерфейсов, что позволяет заменить реализацию (например, другой ODE-солвер или объектное хранилище S3 вместо инлайн-блобов в БД) без изменения вышестоящих слоёв.
+- **Simulation Engine** — численное решение ODE (RK45, Apache Commons Math). Через `ModelRegistry` получает реализацию модели по коду (`SIR`, `LOTKA_VOLTERRA`, `LOGISTIC`); сами уравнения зашиты в коде (`OdeModel.derivatives`), а не в БД. Новая модель = новый Spring-бин, никаких миграций.
+- **Validation Engine** — применяет набор `Validator` к произвольному `Map<String, Any>`. Один и тот же движок проверяет и параметры ODE-эксперимента (`ParameterSet`), и значения колонок загруженных таблиц перед интерполяцией. Поддержка `RANGE` (например `0 ≤ beta ≤ 1`, `population > 0`) и `CONSTRAINT` (инварианты вида `S + I + R = N`). Валидатор хранит `target_kind` (`PARAMETER` / `DATASET_COLUMN`) и `target_field`, что позволяет переиспользовать механизм между обоими контурами.
+- **Interpolation Engine** — численный анализ загруженных таблиц данных. Через `InterpolationMethodRegistry` получает реализацию метода по коду (`LINEAR`, `CUBIC_SPLINE`, `LAGRANGE`, `NEWTON`, `LINEAR_EXTRAP`, `POLY_EXTRAP`, `EXPONENTIAL_EXTRAP`). Каждый метод реализует интерфейс `InterpolationMethod`. Использует Apache Commons Math для сплайнов и полиномиальных аппроксимаций. Контур независим от ODE-симуляции.
+- **Repository Layer** — Spring Data JPA-репозитории. Изолируют доступ к БД от бизнес-логики.
+- **File Storage** — абстракция над хранилищем файлов. В MVP единственная реализация `DatabaseBlobStorage` хранит контент датасетов в `datasets.data`. Архитектурно подготовлено к `LocalFileStorage` и `S3FileStorage` без изменения `DatasetService`.
+
+![C4 L3 Backend](img/c4_l3_component_backend.svg)
+
+### Frontend (TypeScript, React)
+
+![C4 L3 Frontend](img/c4_l3_component_frontend.svg)
+
+## 4. Нотация C4 — уровень L4 (код, UML-диаграммы классов)
+
+### Компонент доступа к данным (Repository Layer)
+
+![C4 L4 Repository](img/c4_l4_repository.svg)
+
+### Компонент бизнес-логики (Service Layer)
+
+![C4 L4 Service](img/c4_l4_service.svg)
+
+## 5. Диаграммы последовательностей (UML Sequence)
+
+### Процесс 1. Проведение вычислительного эксперимента
+
+![Sequence: experiment](img/seq_experiment.svg)
+
+### Процесс 2. Сравнение экспериментов
+
+![Sequence: comparison](img/seq_comparison.svg)
+
+## 6. Схема БД (DBML)
+
+
+СУБД: **PostgreSQL**. Схема включает 11 таблиц:
+
+| Таблица | Назначение |
+|---|---|
+| `users` | Пользователи |
+| `model_templates` | Каталог моделей. В БД лежит только метаинформация: `code` (ключ реестра — `SIR`, `LOTKA_VOLTERRA`, ...), название, описание, тип солвера. Уравнения — в коде (`OdeModel`-реализации), пользователь свои не задаёт. |
+| `datasets` | Загруженные файлы данных (CSV/JSON) для DATA_FIT-валидации. Хранит метаданные (`mime_type`, `size_bytes`, `original_filename`) и стратегию `storage_kind` (`INLINE_DB` / `LOCAL_FS` / `S3`). В MVP блоб лежит инлайном в `data: bytea`; для S3-хранилища — путь в `storage_url`, `data IS NULL` |
+| `validators` | Правила валидации (`RANGE` / `CONSTRAINT`) с явным `target_kind`: либо параметры ODE-эксперимента (привязка к `model_template_id`), либо колонки загруженной таблицы (привязка к `dataset_id`). Один движок проверяет оба контура. |
+| `experiments` | Эксперименты пользователя |
+| `parameter_sets` | Набор параметров эксперимента (коэффициенты ODE, временной диапазон) |
+| `simulation_results` | Временные ряды — результат ODE-симуляции (JSONB) |
+| `validation_results` | Результаты применения валидаторов к набору параметров |
+| `comparisons` | Сравнения нескольких экспериментов |
+| `comparison_experiments` | M:N между сравнением и экспериментами |
+| `interpolations` | Запросы интерполяции/экстраполяции по загруженной таблице (`method_code`, `kind`, `source_column`, `parameters`, `result_data`). Отдельный контур, не связан с экспериментами. |
+
+Параметры ODE и результаты симуляции хранятся в JSONB — это позволяет поддерживать произвольное количество переменных для разных моделей без изменения схемы. Контент датасетов в MVP лежит в `datasets.data` (BYTEA, инлайн); поле `storage_kind` готово принять стратегии `LOCAL_FS` / `S3` без миграции схемы.
+
+### Каталог правил валидации
+
+Поле `validators.rules` (JSONB) принимает строго один из приведённых ниже форматов в зависимости от `validators.check_type`. Каталог правил публикуется через `GET /api/validators/rule-types` (`ValidatorService.listAvailableRules()`); UI рендерит форму создания валидатора, читая этот эндпоинт. Расширение каталога — добавление нового `ConstraintRule`-бина в код, без миграций БД и правок UI.
+
+#### `check_type = RANGE` — числовая граница (одно поле)
+
+| Параметр | Тип | Обяз. | Описание |
+|---|---|---|---|
+| `min` | number | нет | нижняя граница |
+| `max` | number | нет | верхняя граница |
+| `minExclusive` | boolean | нет, default `false` | если `true` — строгая `>` вместо `≥` |
+| `maxExclusive` | boolean | нет, default `false` | если `true` — строгая `<` вместо `≤` |
+
+Хотя бы один из `min` / `max` должен быть указан. Применимо к `target_kind`: `PARAMETER`, `DATASET_COLUMN`.
+
+Примеры:
+```json
+{"min": 0, "max": 1}
+{"min": 0, "minExclusive": true}
+{"max": 100}
+{"min": -1, "max": 1, "maxExclusive": true}
+```
+
+#### `check_type = CONSTRAINT` — инвариант над несколькими значениями
+
+Правила описаны через `rules.type` — ключ из `ConstraintRuleRegistry`. Доступные типы (расширяется через `@Component`-бины класса `ConstraintRule`):
+
+| `type` | Класс | Параметры | Семантика | Применимо к |
+|---|---|---|---|---|
+| `SUM_EQUALS_VALUE` | `SumEqualsValueRule` | `fields: List<String>`, `expected: Number`, `tolerance?: Number` | Σ значений полей == `expected` (±`tolerance`, default 1e-9) | PARAMETER |
+| `SUM_EQUALS_FIELD` | `SumEqualsFieldRule` | `fields: List<String>`, `expectedField: String`, `tolerance?: Number` | Σ значений полей == значение поля `expectedField` | PARAMETER |
+| `ORDERED` | `OrderedRule` | `fields: List<String>`, `direction: ASCENDING \| DESCENDING` | Значения перечисленных полей строго отсортированы | PARAMETER, DATASET_COLUMN |
+
+Примеры:
+```json
+{"type": "SUM_EQUALS_VALUE",
+ "fields": ["S","I","R"],
+ "expected": 1000.0}
+
+{"type": "SUM_EQUALS_FIELD",
+ "fields": ["S","I","R"],
+ "expectedField": "N"}
+
+{"type": "ORDERED",
+ "fields": ["t1","t2","t3"],
+ "direction": "ASCENDING"}
+```

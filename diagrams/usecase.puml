@@ -22,6 +22,10 @@ rectangle "Vargod" {
   usecase "Сохранение эксперимента" as UC10
   usecase "Сравнение экспериментов" as UC11
   usecase "Публикация эксперимента" as UC12
+
+  usecase "Загрузка таблицы\nданных (CSV/JSON)" as UC13
+  usecase "Интерполяция значений\n(linear, spline, Lagrange, Newton)" as UC14
+  usecase "Экстраполяция значений\n(linear, polynomial, exponential)" as UC15
 }
 
 Guest --> UC1
@@ -37,10 +41,15 @@ Researcher --> UC9
 Researcher --> UC10
 Researcher --> UC11
 Researcher --> UC12
+Researcher --> UC13
+Researcher --> UC14
+Researcher --> UC15
 
 UC6 ..> UC7 : <<include>>
 UC8 ..> UC7 : <<include>>
 UC9 ..> UC8 : <<extend>>
 UC12 ..> UC10 : <<include>>
+UC14 ..> UC13 : <<include>>
+UC15 ..> UC13 : <<include>>
 
 @enduml

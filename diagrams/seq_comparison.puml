@@ -1,0 +1,68 @@
+@startuml seq_comparison
+title Сравнение экспериментов
+
+actor "Исследователь" as User
+participant "React SPA" as SPA
+participant "ComparisonController" as Ctrl
+participant "ComparisonService" as Svc
+participant "ExperimentRepository" as ExpRepo
+participant "ComparisonRepository" as CompRepo
+database "PostgreSQL" as DB
+
+== Открытие списка экспериментов ==
+
+User -> SPA : Перейти в «Мои эксперименты»
+SPA -> Ctrl : GET /api/experiments?userId={id}
+Ctrl -> ExpRepo : findAllByUserId(userId)
+ExpRepo -> DB : SELECT * FROM experiments WHERE user_id = ?\nAND status = 'COMPLETED'
+DB --> ExpRepo : [ExperimentEntity]
+Ctrl --> SPA : 200 OK [ExperimentDto[]]
+SPA --> User : Список завершённых экспериментов
+
+== Создание сравнения ==
+
+User -> SPA : Выбрать два эксперимента, нажать «Сравнить»
+SPA -> Ctrl : POST /api/comparisons\n{experimentIds: [id1, id2]}
+Ctrl -> Svc : create([id1, id2], userId)
+
+Svc -> ExpRepo : findById(id1)
+ExpRepo -> DB : SELECT * FROM experiments\nJOIN simulation_results ON ...\nWHERE id = ?
+DB --> ExpRepo : ExperimentEntity{modelTemplateId, result}
+
+Svc -> ExpRepo : findById(id2)
+ExpRepo -> DB : SELECT * FROM experiments ... WHERE id = ?
+DB --> ExpRepo : ExperimentEntity{modelTemplateId, result}
+
+Svc -> Svc : assertSameModel(exp1, exp2)
+
+alt Эксперименты используют разные модели
+    Svc --> Ctrl : DifferentModelException
+    Ctrl --> SPA : 400 Bad Request\n{"error": "Experiments use different models"}
+    SPA --> User : «Нельзя сравнивать эксперименты\nс разными моделями»
+else Модель одна
+    Svc -> CompRepo : save(comparison{userId, experimentIds})
+    CompRepo -> DB : INSERT INTO comparisons\nINSERT INTO comparison_experiments (x2)
+    DB --> CompRepo : ComparisonEntity{id}
+
+    Svc --> Ctrl : Comparison + результаты обоих экспериментов
+    Ctrl --> SPA : 201 Created [ComparisonDto]
+    SPA --> User : Сравнительный график\n(кривые двух экспериментов на одних осях,\nразными цветами с легендой)
+
+    == Взаимодействие с графиком ==
+
+    User -> SPA : Навести курсор на точку
+    SPA -> SPA : Интерполяция значений обоих рядов\n(клиентская логика)
+    SPA --> User : Tooltip: точные значения переменных\nдля обоих экспериментов в момент t
+
+    == Сохранение сравнения ==
+
+    User -> SPA : Нажать «Сохранить сравнение»
+    SPA -> Ctrl : PATCH /api/comparisons/{id}\n{name: "SIR: β=0.3 vs β=0.5"}
+    Ctrl -> CompRepo : save(comparison{name})
+    CompRepo -> DB : UPDATE comparisons SET name = ?
+    DB --> CompRepo : ComparisonEntity
+    Ctrl --> SPA : 200 OK [ComparisonDto]
+    SPA --> User : Сравнение сохранено
+end
+
+@enduml

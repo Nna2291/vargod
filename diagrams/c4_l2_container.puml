@@ -1,0 +1,24 @@
+@startuml c4_l2_container
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Container.puml
+
+SHOW_LEGEND()
+
+title Vargod — L2: Контейнеры
+
+Person(researcher, "Исследователь")
+Person(guest, "Гость")
+
+System_Boundary(vargod, "Vargod") {
+    Container(spa, "Web SPA", "TypeScript, React", "Интерфейс пользователя:\nкаталог моделей, форма параметров,\nграфик результатов, сравнение экспериментов.")
+
+    Container(api, "API Server", "Kotlin, Spring Boot", "REST API. Оркестрирует бизнес-логику:\nуправление экспериментами, запуск ODE-симуляции,\nвалидацию параметров, сравнение результатов.")
+
+    ContainerDb(db, "База данных", "PostgreSQL", "Хранит пользователей, шаблоны моделей,\nэксперименты, наборы параметров,\nрезультаты симуляций, датасеты, валидаторы.")
+}
+
+Rel(researcher, spa, "Использует")
+Rel(guest, spa, "Просматривает")
+Rel(spa, api, "REST API")
+Rel(api, db, "Читает / записывает")
+
+@enduml

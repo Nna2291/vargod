@@ -1,0 +1,108 @@
+// Vargod — Database Schema
+// СУБД: PostgreSQL
+
+Table users {
+  id         uuid        [pk, default: `gen_random_uuid()`]
+  email      varchar(255) [unique, not null]
+  name       varchar(255) [not null]
+  role       varchar(20)  [not null, note: 'GUEST | RESEARCHER']
+  created_at timestamptz  [not null, default: `now()`]
+}
+
+Table model_templates {
+  id          uuid         [pk, default: `gen_random_uuid()`]
+  code        varchar(50)  [unique, not null, note: 'ключ реестра ModelRegistry в коде: SIR | SEIR | LOTKA_VOLTERRA | LOGISTIC | ...']
+  name        varchar(255) [not null]
+  description text
+  solver_type varchar(20)  [not null, note: 'RK45 | RK23 | EULER']
+}
+
+Table datasets {
+  id                uuid         [pk, default: `gen_random_uuid()`]
+  name              varchar(255) [not null]
+  format            varchar(10)  [not null, note: 'CSV | JSON']
+  mime_type         varchar(100) [not null, note: 'text/csv | application/json']
+  size_bytes        bigint       [not null]
+  original_filename varchar(255) [not null]
+  storage_kind      varchar(20)  [not null, default: 'INLINE_DB', note: 'INLINE_DB | LOCAL_FS | S3']
+  storage_url       varchar(500) [note: 'путь/ключ; NULL для INLINE_DB']
+  data              bytea        [note: 'содержимое файла; NOT NULL только при storage_kind = INLINE_DB']
+  uploaded_at       timestamptz  [not null, default: `now()`]
+  user_id           uuid         [not null, ref: > users.id]
+}
+
+Table validators {
+  id                uuid [pk, default: `gen_random_uuid()`]
+  name              varchar(255) [not null]
+  check_type        varchar(20)  [not null, note: 'RANGE | CONSTRAINT']
+  target_kind       varchar(20)  [not null, note: 'PARAMETER (для ODE-параметров) | DATASET_COLUMN (для колонок загруженных таблиц)']
+  target_field      varchar(100) [not null, note: 'имя параметра (alpha, beta) или колонки (x, y, t) — то, к чему применяется проверка']
+  rules             jsonb        [not null, note: 'для RANGE: {"min": 0, "max": 1}; для CONSTRAINT: {"expression": "S + I + R = N"}']
+  model_template_id uuid         [ref: > model_templates.id, note: 'NOT NULL когда target_kind = PARAMETER']
+  dataset_id        uuid         [ref: > datasets.id, note: 'NOT NULL когда target_kind = DATASET_COLUMN']
+}
+
+Table experiments {
+  id                uuid [pk, default: `gen_random_uuid()`]
+  name              varchar(255)
+  status            varchar(20)  [not null, note: 'PENDING | RUNNING | COMPLETED | FAILED']
+  is_public         boolean      [not null, default: false]
+  created_at        timestamptz  [not null, default: `now()`]
+  user_id           uuid         [not null, ref: > users.id]
+  model_template_id uuid         [not null, ref: > model_templates.id]
+}
+
+Table parameter_sets {
+  id            uuid   [pk, default: `gen_random_uuid()`]
+  values        jsonb  [not null, note: 'коэффициенты ODE: {"alpha": 1.0, "beta": 0.1, "gamma": 1.5}']
+  t_start       float8 [not null]
+  t_end         float8 [not null]
+  step          float8 [not null]
+  experiment_id uuid   [unique, not null, ref: - experiments.id]
+}
+
+Table simulation_results {
+  id            uuid        [pk, default: `gen_random_uuid()`]
+  data          jsonb       [not null, note: 'временные ряды: {"t": [...], "S": [...], "I": [...], "R": [...]}']
+  created_at    timestamptz [not null, default: `now()`]
+  experiment_id uuid        [unique, not null, ref: - experiments.id]
+}
+
+Table validation_results {
+  id               uuid [pk, default: `gen_random_uuid()`]
+  status           varchar(10) [not null, note: 'PASS | FAIL']
+  message          text
+  parameter_set_id uuid [not null, ref: > parameter_sets.id]
+  validator_id     uuid [not null, ref: > validators.id]
+}
+
+Table comparisons {
+  id         uuid        [pk, default: `gen_random_uuid()`]
+  name       varchar(255)
+  created_at timestamptz [not null, default: `now()`]
+  user_id    uuid        [not null, ref: > users.id]
+}
+
+// M:N: сравнение включает несколько экспериментов
+Table comparison_experiments {
+  comparison_id uuid [not null, ref: > comparisons.id]
+  experiment_id uuid [not null, ref: > experiments.id]
+
+  indexes {
+    (comparison_id, experiment_id) [pk]
+  }
+}
+
+// Запросы интерполяции/экстраполяции по загруженному датасету (отдельный контур, не связан с экспериментами)
+Table interpolations {
+  id            uuid        [pk, default: `gen_random_uuid()`]
+  dataset_id    uuid        [not null, ref: > datasets.id]
+  method_code   varchar(50) [not null, note: 'ключ реестра InterpolationMethodRegistry: LINEAR | CUBIC_SPLINE | LAGRANGE | NEWTON | LINEAR_EXTRAP | POLY_EXTRAP | EXPONENTIAL_EXTRAP']
+  kind          varchar(20) [not null, note: 'INTERPOLATE | EXTRAPOLATE']
+  source_column varchar(100) [not null, note: 'имя колонки таблицы, по которой строится модель']
+  parameters    jsonb       [not null, note: 'параметры метода: {"degree": 3, "x_query": [...]} и т.п.']
+  result_data   jsonb       [note: 'результат: {"x": [...], "y": [...]}; NULL до завершения вычисления']
+  status        varchar(20) [not null, default: 'PENDING', note: 'PENDING | COMPLETED | FAILED']
+  created_at    timestamptz [not null, default: `now()`]
+  user_id       uuid        [not null, ref: > users.id]
+}

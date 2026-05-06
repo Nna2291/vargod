@@ -1,0 +1,16 @@
+@startuml c4_l1_context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Context.puml
+
+SHOW_LEGEND()
+
+title Vargod — L1: Контекст системы
+
+Person(researcher, "Исследователь", "Зарегистрированный пользователь.\nСоздаёт эксперименты, запускает симуляции,\nсравнивает результаты.")
+Person(guest, "Гость", "Неавторизованный пользователь.\nПросматривает каталог моделей\nи публичные эксперименты.")
+
+System(vargod, "Vargod", "Веб-платформа для численного моделирования\nбиологических систем на основе ODE.\nПозволяет запускать симуляции без написания кода.")
+
+Rel(researcher, vargod, "Использует")
+Rel(guest, vargod, "Просматривает")
+
+@enduml

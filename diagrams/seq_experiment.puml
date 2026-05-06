@@ -1,0 +1,81 @@
+@startuml seq_experiment
+title Проведение вычислительного эксперимента
+
+actor "Исследователь" as User
+participant "React SPA" as SPA
+participant "ExperimentController" as Ctrl
+participant "ExperimentService" as Svc
+participant "ModelService" as ModelSvc
+participant "ValidationEngine" as VE
+participant "SimulationEngine" as SE
+participant "ExperimentRepository" as Repo
+database "PostgreSQL" as DB
+
+== Выбор модели ==
+
+User -> SPA : Открыть «Новый эксперимент»
+SPA -> Ctrl : GET /api/models
+Ctrl -> ModelSvc : listAll()
+ModelSvc -> DB : SELECT * FROM model_templates
+DB --> ModelSvc : [ModelTemplateEntity]
+ModelSvc --> Ctrl : List<ModelTemplate>
+Ctrl --> SPA : 200 OK [ModelTemplateDto]
+SPA --> User : Каталог моделей
+
+User -> SPA : Выбрать модель «Лотка-Вольтерра»
+SPA -> Ctrl : GET /api/models/{id}
+Ctrl -> ModelSvc : getById(id)
+ModelSvc -> DB : SELECT model, validators WHERE id = ?
+DB --> ModelSvc : ModelTemplateEntity + ValidatorEntity[]
+ModelSvc --> Ctrl : ModelTemplate (с валидаторами)
+Ctrl --> SPA : 200 OK [ModelTemplateDto]
+SPA --> User : Форма параметров с подсказками
+
+== Запуск симуляции ==
+
+User -> SPA : Заполнить параметры, нажать «Запустить»
+SPA -> Ctrl : POST /api/experiments\n{modelTemplateId, parameters, tStart, tEnd, step}
+Ctrl -> Svc : create(request, userId)
+
+Svc -> VE : validate(parameterSet, model.validators)
+
+loop по каждому валидатору
+    VE -> VE : applyCheck(validator, params)
+end
+
+alt Валидация провалена
+    VE --> Svc : List<ValidationResult(FAIL)>
+    Svc --> Ctrl : ValidationException
+    Ctrl --> SPA : 422 Unprocessable Entity\n{errors: [...]}
+    SPA --> User : Подсветить ошибочные поля
+else Валидация прошла
+    VE --> Svc : List<ValidationResult(PASS)>
+
+    Svc -> Repo : save(experiment{status=PENDING})
+    Repo -> DB : INSERT INTO experiments
+    DB --> Repo : ExperimentEntity{id}
+
+    Svc -> SE : solve(modelTemplate, parameterSet)
+    note right of SE : Kotlin coroutine,\nRunge-Kutta RK45\n(Apache Commons Math)
+    SE --> Svc : SimulationResult{timePoints, variables}
+
+    Svc -> Repo : save(simulationResult)
+    Svc -> Repo : update(experiment{status=COMPLETED})
+    Repo -> DB : INSERT INTO simulation_results\nUPDATE experiments SET status = 'COMPLETED'
+
+    Svc --> Ctrl : Experiment (с результатом)
+    Ctrl --> SPA : 201 Created [ExperimentDto + SimulationResultDto]
+    SPA --> User : Интерактивный график временных рядов
+end
+
+== Сохранение эксперимента ==
+
+User -> SPA : Ввести название, нажать «Сохранить»
+SPA -> Ctrl : PATCH /api/experiments/{id}\n{name: "Базовая динамика хищник-жертва"}
+Ctrl -> Svc : publish(id, userId)
+Svc -> Repo : update(experiment{name, isPublic})
+Repo -> DB : UPDATE experiments SET name = ?, is_public = ?
+Ctrl --> SPA : 200 OK [ExperimentDto]
+SPA --> User : Эксперимент сохранён в личном кабинете
+
+@enduml

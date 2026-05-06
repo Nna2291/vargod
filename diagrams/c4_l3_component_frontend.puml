@@ -1,0 +1,23 @@
+@startuml c4_l3_component_frontend
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Component.puml
+
+SHOW_LEGEND()
+
+title Vargod — L3: Компоненты Web SPA (TypeScript, React)
+
+Container(api, "API Server", "Kotlin, Spring Boot", "Бэкенд")
+
+Container_Boundary(spa, "Web SPA") {
+    Component(pages, "Pages", "React, TypeScript", "ModelCatalogPage, ExperimentPage, ComparisonPage, ProfilePage, DataAnalysisPage (загрузка таблиц + интерполяция/экстраполяция). Верхнеуровневые маршруты, компоновка разделов.")
+    Component(uikit, "UI Components", "React, TypeScript", "ParameterForm, ResultChart, ModelCard, ComparisonChart, ValidationAlert, FileUpload (drag-drop CSV/JSON), MethodSelector (выбор interpolation/extrapolation метода), InterpolationChart (точки + сплайн/полином/прогноз). Переиспользуемые компоненты представления.")
+    Component(state, "State Manager", "Zustand (TypeScript)", "Глобальное состояние: текущий пользователь, активный эксперимент, список моделей. Отделяет логику управления состоянием от UI.")
+    Component(apiclient, "API Client", "TypeScript, axios", "Типизированные обёртки над REST-эндпоинтами. Обработка ошибок, интерцепторы авторизации (JWT). Изолирует детали HTTP от компонентов.")
+}
+
+Rel(pages, uikit, "Рендерит компоненты")
+Rel(pages, state, "Читает / обновляет состояние")
+Rel(pages, apiclient, "Вызывает API-методы")
+Rel(uikit, state, "Читает состояние")
+Rel(apiclient, api, "REST-запросы", "JSON / HTTPS")
+
+@enduml

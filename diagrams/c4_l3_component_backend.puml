@@ -1,0 +1,31 @@
+@startuml c4_l3_component_backend
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Component.puml
+
+SHOW_LEGEND()
+
+title Vargod — L3: Компоненты API Server (Kotlin, Spring Boot)
+
+Container(spa, "Web SPA", "TypeScript, React", "Фронтенд")
+ContainerDb(db, "PostgreSQL", "", "СУБД")
+
+Container_Boundary(api, "API Server") {
+    Component(controllers, "REST Controllers", "Spring MVC (Kotlin)", "ModelController, ExperimentController, ComparisonController, DatasetController. Маршрутизация HTTP, сериализация DTO, аутентификация (Spring Security).")
+    Component(services, "Service Layer", "Kotlin", "ExperimentService, SimulationService, ModelService, ValidationService, ComparisonService. Оркестрация бизнес-логики. Реализует принцип инверсии зависимостей через интерфейсы.")
+    Component(simulation, "Simulation Engine", "Kotlin, Apache Commons Math", "Численное решение систем ODE методами Рунге-Кутты (RK45, RK23). Реализует SimulationEngine. Через ModelRegistry получает реализацию OdeModel по коду модели (SIR, LOTKA_VOLTERRA, ...) — уравнения зашиты в коде, не в БД.")
+    Component(validation, "Validation Engine", "Kotlin", "Применяет набор Validator к ParameterSet. Поддерживает RANGE-проверки и CONSTRAINT-инварианты (например, S+I+R=N для SIR). Реализует интерфейс ValidationEngine.")
+    Component(interpolation, "Interpolation Engine", "Kotlin, Apache Commons Math", "Численный анализ загруженных пользователем таблиц данных: интерполяция (linear, cubic spline, Lagrange, Newton) и экстраполяция (linear, polynomial, exponential). Через InterpolationMethodRegistry получает реализацию метода по коду. Отдельный контур, независимый от ODE-симуляции.")
+    Component(repositories, "Repository Layer", "Spring Data JPA (Kotlin)", "ExperimentRepository, ModelRepository, DatasetRepository, ValidationResultRepository, ComparisonRepository. Паттерн Repository. Изолирует доступ к БД.")
+    Component(filestorage, "File Storage", "Kotlin (interface + DatabaseBlobStorage в MVP)", "Абстракция над персистентным хранилищем файлов. Контракт FileStorage, реализация DatabaseBlobStorage (BYTEA через JPA). Подготовлена замена на LocalFileStorage / S3FileStorage без изменения вышестоящих слоёв.")
+}
+
+Rel(spa, controllers, "REST-запросы", "JSON / HTTPS")
+Rel(controllers, services, "Вызывает методы сервисов")
+Rel(services, simulation, "Запускает ODE-симуляцию")
+Rel(services, validation, "Валидирует параметры")
+Rel(services, interpolation, "Запускает интерполяцию / экстраполяцию")
+Rel(services, repositories, "Читает / сохраняет сущности")
+Rel(services, filestorage, "Сохраняет / читает контент файла")
+Rel(filestorage, repositories, "Через JPA (для INLINE_DB)")
+Rel(repositories, db, "SQL-запросы", "JDBC")
+
+@enduml

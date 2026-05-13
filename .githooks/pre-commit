@@ -1,0 +1,25 @@
+set -euo pipefail
+
+if ! git diff --cached --name-only --diff-filter=ACMR \
+     | grep -qE '^diagrams/.*\.puml$'; then
+  exit 0
+fi
+
+if ! command -v plantuml >/dev/null 2>&1; then
+  echo "pre-commit: plantuml не найден в PATH; пропускаю регенерацию SVG" >&2
+  exit 0
+fi
+
+cd "$(git rev-parse --show-toplevel)"
+
+echo "pre-commit: регенерирую SVG из diagrams/*.puml..."
+plantuml -tsvg -o ../img diagrams/*.puml
+
+perl -i -pe '
+  s|<\?plantuml [^?]*\?>|<?xml version="1.0" encoding="UTF-8"?>|g;
+  s|<\?plantuml-src [^?]*\?>||g
+' img/c4_*.svg img/seq_*.svg img/usecase.svg
+
+git add img/c4_*.svg img/seq_*.svg img/usecase.svg
+
+echo "pre-commit: SVG обновлены и добавлены в коммит"

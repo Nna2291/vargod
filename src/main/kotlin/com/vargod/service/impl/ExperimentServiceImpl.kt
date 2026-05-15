@@ -10,10 +10,10 @@ import com.vargod.domain.SimulationResult
 import com.vargod.domain.ValidationException
 import com.vargod.domain.ValidationStatus
 import com.vargod.domain.dto.CreateExperimentRequest
+import com.vargod.domain.repository.ExperimentRepository
+import com.vargod.domain.repository.ModelTemplateRepository
 import com.vargod.engine.SimulationEngine
 import com.vargod.engine.ValidationEngine
-import com.vargod.repository.ExperimentRepository
-import com.vargod.repository.ModelTemplateRepository
 import com.vargod.service.ExperimentService
 import java.time.Instant
 import java.util.UUID

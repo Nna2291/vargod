@@ -9,3 +9,7 @@ out/
 *.bat
 gradlew
 gradle/
+data/
+*.db
+*.mv.db
+*.trace.db

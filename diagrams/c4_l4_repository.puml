@@ -4,163 +4,9 @@ skinparam classFontSize 12
 skinparam packageFontSize 13
 hide empty members
 
-title Vargod — L4: Компонент доступа к данным (Repository Layer)
+title Vargod — L4: Компонент доступа к данным (Repository Layer, Lab 4)
 
-package "DB Entities (JPA)" #eef {
-    class UserEntity {
-        +id: UUID
-        +email: String
-        +name: String
-        +role: UserRole
-        +createdAt: Instant
-    }
-
-    class ModelTemplateEntity {
-        +id: UUID
-        +code: String
-        +name: String
-        +description: String?
-        +solverType: String
-    }
-
-    class ExperimentEntity {
-        +id: UUID
-        +name: String?
-        +status: ExperimentStatus
-        +isPublic: Boolean
-        +createdAt: Instant
-    }
-
-    class ParameterSetEntity {
-        +id: UUID
-        +values: String
-        +tStart: Double
-        +tEnd: Double
-        +step: Double
-    }
-
-    class SimulationResultEntity {
-        +id: UUID
-        +data: String
-        +createdAt: Instant
-    }
-
-    class DatasetEntity {
-        +id: UUID
-        +name: String
-        +format: String
-        +mimeType: String
-        +sizeBytes: Long
-        +originalFilename: String
-        +storageKind: String
-        +storageUrl: String?
-        +data: ByteArray?
-        +uploadedAt: Instant
-    }
-
-    class ValidatorEntity {
-        +id: UUID
-        +name: String
-        +checkType: String
-        +targetKind: String
-        +targetField: String
-        +rules: String
-        +modelTemplateId: UUID?
-        +datasetId: UUID?
-    }
-
-    class InterpolationEntity {
-        +id: UUID
-        +methodCode: String
-        +kind: String
-        +sourceColumn: String
-        +parameters: String
-        +resultData: String?
-        +status: String
-        +createdAt: Instant
-    }
-
-    class ValidationResultEntity {
-        +id: UUID
-        +status: String
-        +message: String?
-    }
-
-    class ComparisonEntity {
-        +id: UUID
-        +name: String?
-        +createdAt: Instant
-    }
-
-    ExperimentEntity "N" --> "1" UserEntity
-    ExperimentEntity "N" --> "1" ModelTemplateEntity
-    ExperimentEntity "1" --> "0..1" ParameterSetEntity
-    ExperimentEntity "1" --> "0..1" SimulationResultEntity
-    DatasetEntity "N" --> "1" UserEntity
-    ValidatorEntity "N" --> "0..1" ModelTemplateEntity
-    ValidatorEntity "N" --> "0..1" DatasetEntity
-    ValidationResultEntity "N" --> "1" ValidatorEntity
-    ComparisonEntity "N" --> "1" UserEntity
-    ComparisonEntity "N" --> "M" ExperimentEntity
-    InterpolationEntity "N" --> "1" DatasetEntity
-    InterpolationEntity "N" --> "1" UserEntity
-}
-
-package "Repository Interfaces" #efe {
-    interface ExperimentRepository {
-        +findById(id: UUID): ExperimentEntity?
-        +findAllByUserId(userId: UUID): List<ExperimentEntity>
-        +findAllByIsPublicTrue(): List<ExperimentEntity>
-        +save(entity: ExperimentEntity): ExperimentEntity
-        +deleteById(id: UUID)
-    }
-
-    interface ModelTemplateRepository {
-        +findAll(): List<ModelTemplateEntity>
-        +findById(id: UUID): ModelTemplateEntity?
-        +findValidatorsByModelId(id: UUID): List<ValidatorEntity>
-    }
-
-    interface DatasetRepository {
-        +findById(id: UUID): DatasetEntity?
-        +findAllByUserId(userId: UUID): List<DatasetEntity>
-        +save(entity: DatasetEntity): DatasetEntity
-    }
-
-    interface ValidationResultRepository {
-        +findAllByParameterSetId(id: UUID): List<ValidationResultEntity>
-        +save(entity: ValidationResultEntity): ValidationResultEntity
-    }
-
-    interface ComparisonRepository {
-        +findById(id: UUID): ComparisonEntity?
-        +findAllByUserId(userId: UUID): List<ComparisonEntity>
-        +save(entity: ComparisonEntity): ComparisonEntity
-    }
-
-    interface ValidatorRepository {
-        +findAllByModelTemplateId(id: UUID): List<ValidatorEntity>
-        +findAllByDatasetId(id: UUID): List<ValidatorEntity>
-        +findAllByIds(ids: List<UUID>): List<ValidatorEntity>
-        +save(entity: ValidatorEntity): ValidatorEntity
-    }
-
-    interface InterpolationRepository {
-        +findById(id: UUID): InterpolationEntity?
-        +findAllByUserId(userId: UUID): List<InterpolationEntity>
-        +save(entity: InterpolationEntity): InterpolationEntity
-    }
-
-    ExperimentRepository ..> ExperimentEntity : <<manages>>
-    ModelTemplateRepository ..> ModelTemplateEntity : <<manages>>
-    DatasetRepository ..> DatasetEntity : <<manages>>
-    ValidationResultRepository ..> ValidationResultEntity : <<manages>>
-    ComparisonRepository ..> ComparisonEntity : <<manages>>
-    ValidatorRepository ..> ValidatorEntity : <<manages>>
-    InterpolationRepository ..> InterpolationEntity : <<manages>>
-}
-
-package "Domain Model" #fee {
+package "Domain (com.vargod.domain)" #fee {
     class Experiment {
         +id: UUID
         +name: String?
@@ -170,6 +16,7 @@ package "Domain Model" #fee {
         +modelTemplateId: UUID
         +parameterSet: ParameterSet?
         +result: SimulationResult?
+        +createdAt: Instant
     }
 
     class ParameterSet {
@@ -184,6 +31,33 @@ package "Domain Model" #fee {
         +id: UUID
         +timePoints: List<Double>
         +variables: Map<String, List<Double>>
+        +createdAt: Instant
+    }
+
+    class ModelTemplate {
+        +id: UUID
+        +code: String
+        +name: String
+        +description: String?
+        +solverType: String
+        +validators: List<Validator>
+    }
+
+    class Validator {
+        +id: UUID
+        +name: String
+        +checkType: ValidatorType
+        +targetKind: ValidatorTargetKind
+        +targetField: String
+        +rules: Map<String, Any>
+    }
+
+    class Comparison {
+        +id: UUID
+        +name: String?
+        +userId: UUID
+        +experiments: List<Experiment>
+        +createdAt: Instant
     }
 
     enum ExperimentStatus {
@@ -193,76 +67,115 @@ package "Domain Model" #fee {
         FAILED
     }
 
-    Experiment --> ParameterSet
-    Experiment --> SimulationResult
+    class DomainException
+    class PersistenceException
+
+    Experiment "1" --> "0..1" ParameterSet
+    Experiment "1" --> "0..1" SimulationResult
     Experiment --> ExperimentStatus
+    ModelTemplate "1" --> "*" Validator
+    Comparison "1" --> "*" Experiment
+    PersistenceException --|> DomainException
 }
 
-package "DTO (Transport)" #ffe {
-    class ExperimentDto {
-        +id: UUID
-        +name: String?
-        +status: String
-        +isPublic: Boolean
-        +modelTemplateId: UUID
-        +createdAt: String
+package "Repository Interfaces (com.vargod.domain.repository)" #efe {
+    interface ExperimentRepository {
+        +findById(id: UUID): Experiment?
+        +findAllByUserId(userId: UUID): List<Experiment>
+        +findAllPublic(): List<Experiment>
+        +findAllByIds(ids: List<UUID>): List<Experiment>
+        +save(experiment: Experiment): Experiment
+        +deleteById(id: UUID)
     }
 
-    class CreateExperimentRequest {
-        +name: String?
-        +modelTemplateId: UUID
-        +parameters: Map<String, Double>
-        +tStart: Double
-        +tEnd: Double
-        +step: Double
+    interface ModelTemplateRepository {
+        +findAll(): List<ModelTemplate>
+        +findById(id: UUID): ModelTemplate?
     }
 
-    class SimulationResultDto {
-        +experimentId: UUID
-        +timePoints: List<Double>
-        +variables: Map<String, List<Double>>
+    interface ComparisonRepository {
+        +findById(id: UUID): Comparison?
+        +findAllByUserId(userId: UUID): List<Comparison>
+        +save(comparison: Comparison): Comparison
     }
 
-    class DatasetMetadataDto {
-        +id: UUID
-        +name: String
-        +format: String
-        +mimeType: String
-        +sizeBytes: Long
-        +originalFilename: String
-        +uploadedAt: String
-    }
-
-    class DatasetUploadResponse {
-        +id: UUID
-        +name: String
-        +sizeBytes: Long
-    }
-
-    class InterpolationRequestDto {
-        +datasetId: UUID
-        +methodCode: String
-        +sourceColumn: String
-        +parameters: Map<String, Any>
-        +columnValidatorIds: List<UUID>
-    }
-
-    class InterpolationDto {
-        +id: UUID
-        +datasetId: UUID
-        +methodCode: String
-        +kind: String
-        +sourceColumn: String
-        +status: String
-        +result: InterpolationResultDto?
-        +createdAt: String
-    }
-
-    class InterpolationResultDto {
-        +xQuery: List<Double>
-        +yPredicted: List<Double>
-        +diagnostics: Map<String, Any>
-    }
+    ExperimentRepository ..> Experiment : <<manages>>
+    ModelTemplateRepository ..> ModelTemplate : <<manages>>
+    ComparisonRepository ..> Comparison : <<manages>>
 }
+
+package "JDBC Implementations (com.vargod.repository.jdbc)" #eef {
+    class JdbcExperimentRepository {
+        -dataSource: DataSource
+        -codec: JsonCodec
+        +findById/findAll*/save/deleteById(...)
+    }
+
+    class JdbcModelTemplateRepository {
+        -dataSource: DataSource
+        -codec: JsonCodec
+        +findAll/findById(...)
+    }
+
+    class JdbcComparisonRepository {
+        -dataSource: DataSource
+        -experimentRepository: ExperimentRepository
+        +findById/findAllByUserId/save(...)
+    }
+
+    class DataSourceFactory <<object>> {
+        +postgres(url, user, pwd): DataSource
+    }
+
+    class SchemaInitializer {
+        -dataSource: DataSource
+        +initialize()
+    }
+
+    class JsonCodec {
+        +encode(value: Any): String
+        +decodeDoubleMap(json: String): Map<String,Double>
+        +decodeAnyMap(json: String): Map<String,Any>
+        +encodeSimulationData(...)/decodeSimulationData(...)
+    }
+
+    class ResultSetMappers <<extensions>> {
+        +ResultSet.readExperimentRow()
+        +ResultSet.readParameterSet(codec)
+        +ResultSet.readSimulationResult(codec)
+        +ResultSet.readValidator(codec)
+        +ResultSet.readModelTemplate(validators)
+    }
+
+    JdbcExperimentRepository ..|> ExperimentRepository
+    JdbcModelTemplateRepository ..|> ModelTemplateRepository
+    JdbcComparisonRepository ..|> ComparisonRepository
+
+    JdbcExperimentRepository --> JsonCodec
+    JdbcExperimentRepository --> ResultSetMappers
+    JdbcModelTemplateRepository --> JsonCodec
+    JdbcModelTemplateRepository --> ResultSetMappers
+    JdbcComparisonRepository --> ExperimentRepository
+}
+
+interface "javax.sql.DataSource" as DataSource <<JDK>>
+
+JdbcExperimentRepository --> DataSource
+JdbcModelTemplateRepository --> DataSource
+JdbcComparisonRepository --> DataSource
+DataSourceFactory ..> DataSource
+SchemaInitializer --> DataSource
+
+note bottom of "Repository Interfaces (com.vargod.domain.repository)"
+  Интерфейсы вынесены в пакет домена (Lab 4, §3):
+  доступ к данным зависит от бизнес-логики,
+  а не наоборот (Ports & Adapters / DIP).
+end note
+
+note right of PersistenceException
+  Слой данных оборачивает SQLException
+  в PersistenceException (наследник DomainException),
+  чтобы вышестоящие слои не зависели от JDBC.
+end note
 
 @enduml

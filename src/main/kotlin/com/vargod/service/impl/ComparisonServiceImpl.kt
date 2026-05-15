@@ -4,8 +4,8 @@ import com.vargod.domain.AuthorizationException
 import com.vargod.domain.Comparison
 import com.vargod.domain.Experiment
 import com.vargod.domain.NotFoundException
-import com.vargod.repository.ComparisonRepository
-import com.vargod.repository.ExperimentRepository
+import com.vargod.domain.repository.ComparisonRepository
+import com.vargod.domain.repository.ExperimentRepository
 import com.vargod.service.ComparisonService
 import java.time.Instant
 import java.util.UUID

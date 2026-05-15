@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: vargod
+      POSTGRES_USER: vargod
+      POSTGRES_PASSWORD: vargod
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vargod -d vargod"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - vargod-db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/vargod
+      DB_USER: vargod
+      DB_PASSWORD: vargod
+    stdin_open: true
+    tty: true
+
+volumes:
+  vargod-db:

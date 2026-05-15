@@ -1,7 +1,7 @@
 package com.vargod.service.impl
 
 import com.vargod.domain.NotFoundException
-import com.vargod.repository.ModelTemplateRepository
+import com.vargod.domain.repository.ModelTemplateRepository
 import com.vargod.testfixtures.Fixtures
 import io.mockk.every
 import io.mockk.mockk

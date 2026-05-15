@@ -17,3 +17,7 @@ class ValidationException(val results: List<ValidationResult>) :
     )
 
 class IllegalExperimentStateException(message: String) : DomainException(message)
+
+class PersistenceException(message: String, cause: Throwable? = null) : DomainException(message) {
+    init { if (cause != null) initCause(cause) }
+}

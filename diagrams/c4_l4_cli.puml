@@ -1,0 +1,188 @@
+@startuml c4_l4_cli
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+skinparam packageFontSize 13
+hide empty members
+
+title Vargod — L4: Технологический UI (CLI, Lab 5)
+
+package "Service Layer (com.vargod.service)" #fee {
+    interface ModelService {
+        +listAll(): List<ModelTemplate>
+        +getById(id: UUID): ModelTemplate
+    }
+    interface ExperimentService {
+        +create(req, userId): Experiment
+        +getById(id): Experiment
+        +listByUser(userId): List<Experiment>
+        +listPublic(): List<Experiment>
+        +runSimulation(id): SimulationResult
+        +publish(id, userId): Experiment
+    }
+    interface ComparisonService {
+        +create(ids, userId): Comparison
+        +getById(id): Comparison
+        +listByUser(userId): List<Comparison>
+    }
+}
+
+package "CLI (com.vargod.ui.cli)" #eef {
+
+    class App <<entrypoint>> {
+        +main()
+    }
+
+    class CompositionRoot {
+        -config: CliConfig
+        +bootstrap(): Pair<MainLoop, Console>
+    }
+
+    class MainLoop {
+        -router: CommandRouter
+        -ctx: CommandContext
+        +run()
+    }
+
+    package "io" {
+        interface Console {
+            +readLine(prompt): String?
+            +write(line)
+            +writeError(line)
+        }
+        class SystemConsole
+        SystemConsole ..|> Console
+    }
+
+    package "session" {
+        class Session {
+            +userId: UUID?
+            +mode: Mode
+            +loginAs(uuid)
+            +logout()
+            +requireUserId(): UUID
+        }
+        enum Mode {
+            GUEST
+            RESEARCHER
+        }
+    }
+
+    package "command" {
+        interface Command {
+            +name(): String
+            +aliases(): List<String>
+            +help(): String
+            +execute(args, ctx)
+        }
+        class CommandContext <<data>> {
+            +session
+            +console
+            +modelService
+            +experimentService
+            +comparisonService
+            +modelRegistry
+            +modelFormatter
+            +experimentFormatter
+            +simulationFormatter
+            +comparisonFormatter
+        }
+
+        package "command.impl" {
+            class ListModelsCommand
+            class ShowModelCommand
+            class ListPublicExperimentsCommand
+            class ShowExperimentCommand
+            class CreateExperimentCommand
+            class RunSimulationCommand
+            class ListMyExperimentsCommand
+            class PublishExperimentCommand
+            class CreateComparisonCommand
+            class ListMyComparisonsCommand
+            class ShowComparisonCommand
+            class LoginCommand
+            class GuestCommand
+            class WhoamiCommand
+            class HelpCommand
+            class QuitCommand
+        }
+    }
+
+    package "router" {
+        class CommandRouter {
+            -byKey: Map<String, Command>
+            +commands(): Collection<Command>
+            +dispatch(line, ctx)
+        }
+    }
+
+    package "format" {
+        interface "Formatter<T>" as Formatter
+        class ModelFormatter
+        class ExperimentFormatter
+        class SimulationResultFormatter
+        class ComparisonFormatter
+        ModelFormatter ..|> Formatter
+        ExperimentFormatter ..|> Formatter
+        SimulationResultFormatter ..|> Formatter
+        ComparisonFormatter ..|> Formatter
+    }
+
+    package "bootstrap" {
+        class DataSeeder {
+            -dataSource: DataSource
+            +seedIfEmpty()
+        }
+    }
+
+    ListModelsCommand           ..|> Command
+    ShowModelCommand            ..|> Command
+    ListPublicExperimentsCommand ..|> Command
+    ShowExperimentCommand       ..|> Command
+    CreateExperimentCommand     ..|> Command
+    RunSimulationCommand        ..|> Command
+    ListMyExperimentsCommand    ..|> Command
+    PublishExperimentCommand    ..|> Command
+    CreateComparisonCommand     ..|> Command
+    ListMyComparisonsCommand    ..|> Command
+    ShowComparisonCommand       ..|> Command
+    LoginCommand                ..|> Command
+    GuestCommand                ..|> Command
+    WhoamiCommand               ..|> Command
+    HelpCommand                 ..|> Command
+    QuitCommand                 ..|> Command
+
+    App --> CompositionRoot
+    CompositionRoot --> MainLoop
+    CompositionRoot --> CommandRouter
+    CompositionRoot --> CommandContext
+    CompositionRoot --> DataSeeder
+    CompositionRoot --> SystemConsole
+    CompositionRoot --> Session
+    MainLoop --> CommandRouter
+    MainLoop --> CommandContext
+    CommandRouter o--> Command
+    CommandContext --> Session
+    CommandContext --> Console
+    CommandContext --> ModelFormatter
+    CommandContext --> ExperimentFormatter
+    CommandContext --> SimulationResultFormatter
+    CommandContext --> ComparisonFormatter
+    CommandContext ..> ModelService
+    CommandContext ..> ExperimentService
+    CommandContext ..> ComparisonService
+}
+
+note bottom of "CLI (com.vargod.ui.cli)"
+  Слой UI зависит только от интерфейсов слоя сервисов
+  (DIP). Реализации сервисов и репозиториев инжектятся
+  CompositionRoot и UI о них ничего не знает.
+end note
+
+note right of CommandRouter
+  Добавление новой команды (OCP):
+  один класс реализует Command +
+  регистрируется в CompositionRoot.
+  Router/MainLoop не меняются.
+end note
+
+@enduml

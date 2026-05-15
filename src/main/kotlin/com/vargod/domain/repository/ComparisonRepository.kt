@@ -1,4 +1,4 @@
-package com.vargod.repository
+package com.vargod.domain.repository
 
 import com.vargod.domain.Comparison
 import java.util.UUID

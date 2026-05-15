@@ -1,0 +1,14 @@
+.git/
+.gitignore
+.idea/
+.gradle/
+build/
+out/
+*.iml
+*.ipr
+*.iws
+*.md
+diagrams/
+img/
+.DS_Store
+.claude/

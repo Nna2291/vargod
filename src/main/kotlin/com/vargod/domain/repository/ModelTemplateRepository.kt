@@ -1,4 +1,4 @@
-package com.vargod.repository
+package com.vargod.domain.repository
 
 import com.vargod.domain.ModelTemplate
 import java.util.UUID

@@ -3,8 +3,8 @@ package com.vargod.service.impl
 import com.vargod.domain.AuthorizationException
 import com.vargod.domain.Comparison
 import com.vargod.domain.NotFoundException
-import com.vargod.repository.ComparisonRepository
-import com.vargod.repository.ExperimentRepository
+import com.vargod.domain.repository.ComparisonRepository
+import com.vargod.domain.repository.ExperimentRepository
 import com.vargod.testfixtures.Fixtures
 import io.mockk.every
 import io.mockk.mockk

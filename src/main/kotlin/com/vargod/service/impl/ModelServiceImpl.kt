@@ -2,7 +2,7 @@ package com.vargod.service.impl
 
 import com.vargod.domain.ModelTemplate
 import com.vargod.domain.NotFoundException
-import com.vargod.repository.ModelTemplateRepository
+import com.vargod.domain.repository.ModelTemplateRepository
 import com.vargod.service.ModelService
 import java.util.UUID
 

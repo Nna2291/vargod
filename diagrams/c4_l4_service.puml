@@ -32,6 +32,7 @@ package "Service Interfaces" #eef {
     }
 
     interface OdeModel {
+        +code(): String
         +variables(): List<String>
         +parameters(): List<String>
         +derivatives(state: DoubleArray, params: Map<String, Double>, t: Double): DoubleArray
@@ -144,8 +145,8 @@ package "Service Implementations" #efe {
         +derivatives(state, params, t): DoubleArray
     }
 
-    class SpringModelRegistry {
-        -registry: Map<String, OdeModel>
+    class MapModelRegistry {
+        -byCode: Map<String, OdeModel>
         +getByCode(code: String): OdeModel
         +listAll(): Map<String, OdeModel>
     }
@@ -206,8 +207,8 @@ package "Service Implementations" #efe {
         +apply(xs, ys, params): InterpolationResult
     }
 
-    class SpringInterpolationMethodRegistry {
-        -registry: Map<String, InterpolationMethod>
+    class MapInterpolationMethodRegistry {
+        -byCode: Map<String, InterpolationMethod>
         +getByCode(code: String): InterpolationMethod
         +listAll(): Map<String, InterpolationMethod>
     }
@@ -235,9 +236,10 @@ package "Service Implementations" #efe {
         +check(values, params): Boolean
     }
 
-    class SpringConstraintRuleRegistry {
-        -registry: Map<String, ConstraintRule>
+    class MapConstraintRuleRegistry {
+        -byType: Map<String, ConstraintRule>
         +getByType(type: String): ConstraintRule
+        +listAll(): Map<String, ConstraintRule>
     }
 
     class RuleValidationEngine {
@@ -279,7 +281,7 @@ package "Service Implementations" #efe {
     SirModel ..|> OdeModel
     LotkaVolterraModel ..|> OdeModel
     LogisticGrowthModel ..|> OdeModel
-    SpringModelRegistry ..|> ModelRegistry
+    MapModelRegistry ..|> ModelRegistry
 
     InterpolationServiceImpl ..|> InterpolationService
     CommonsMathInterpolationEngine ..|> InterpolationEngine
@@ -290,25 +292,25 @@ package "Service Implementations" #efe {
     LinearExtrapolator ..|> InterpolationMethod
     PolynomialExtrapolator ..|> InterpolationMethod
     ExponentialExtrapolator ..|> InterpolationMethod
-    SpringInterpolationMethodRegistry ..|> InterpolationMethodRegistry
+    MapInterpolationMethodRegistry ..|> InterpolationMethodRegistry
     ValidatorServiceImpl ..|> ValidatorService
     SumEqualsValueRule ..|> ConstraintRule
     SumEqualsFieldRule ..|> ConstraintRule
     OrderedRule ..|> ConstraintRule
-    SpringConstraintRuleRegistry ..|> ConstraintRuleRegistry
+    MapConstraintRuleRegistry ..|> ConstraintRuleRegistry
 
     ExperimentServiceImpl --> SimulationEngine
     ExperimentServiceImpl --> ValidationEngine
     DatasetServiceImpl --> FileStorage
     OdeSimulationEngine --> ModelRegistry
-    SpringModelRegistry o-- OdeModel
+    MapModelRegistry o-- OdeModel
     InterpolationServiceImpl --> InterpolationEngine
     InterpolationServiceImpl --> ValidationEngine
     InterpolationServiceImpl --> FileStorage
     CommonsMathInterpolationEngine --> InterpolationMethodRegistry
-    SpringInterpolationMethodRegistry o-- InterpolationMethod
+    MapInterpolationMethodRegistry o-- InterpolationMethod
     RuleValidationEngine --> ConstraintRuleRegistry
-    SpringConstraintRuleRegistry o-- ConstraintRule
+    MapConstraintRuleRegistry o-- ConstraintRule
 }
 
 package "Domain Model" #fee {

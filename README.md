@@ -229,3 +229,48 @@ Vargod — это веб-платформа для проведения вычи
  "fields": ["t1","t2","t3"],
  "direction": "ASCENDING"}
 ```
+
+---
+
+# Лабораторная работа № 3 — Бизнес-логика
+
+## 1. Объём реализации
+
+Реализован компонент **Service Layer** из L4-диаграммы. Покрыты **3 сервиса из 6**: `ExperimentService`, `ModelService`, `ComparisonService`. 
+| Слой | Реализация |
+|---|---|---|
+| Сервисы | `ExperimentServiceImpl`, `ModelServiceImpl`, `ComparisonServiceImpl` |
+| Движок симуляции | `OdeSimulationEngine` (Apache Commons Math RK45) | 
+| ODE-модели | `SirModel`, `LotkaVolterraModel`, `LogisticGrowthModel` | 
+| Движок валидации | `RuleValidationEngine` (RANGE + CONSTRAINT) | 
+| Constraint-правила | `SumEqualsValueRule`, `SumEqualsFieldRule`, `OrderedRule` | 
+| Реестры | `MapModelRegistry`, `MapConstraintRuleRegistry` | 
+
+## 2. Структура `src/`
+
+```
+src/main/kotlin/com/vargod/
+  domain/            Experiment, ParameterSet, ModelTemplate, SimulationResult,
+                     Comparison, Validator, ValidationResult, exceptions
+  domain/dto/        CreateExperimentRequest
+  service/           ExperimentService, ModelService, ComparisonService (interfaces)
+  service/impl/      *Impl
+  engine/            SimulationEngine, ValidationEngine, OdeModel, ModelRegistry,
+                     ConstraintRule, ConstraintRuleRegistry (interfaces)
+  engine/ode/        SirModel, LotkaVolterraModel, LogisticGrowthModel,
+                     OdeSimulationEngine, MapModelRegistry
+  engine/validation/ SumEqualsValueRule, SumEqualsFieldRule, OrderedRule,
+                     RuleValidationEngine, MapConstraintRuleRegistry
+  repository/        ExperimentRepository, ModelTemplateRepository,
+                     ComparisonRepository (interfaces; impl — Lab 4)
+
+src/test/kotlin/com/vargod/
+  testfixtures/Fixtures.kt
+  domain/DomainExceptionsTest.kt
+  engine/ode/        тесты на SIR, Lotka-Volterra, Logistic, MapModelRegistry,
+                     OdeSimulationEngine (сравнение с аналитическим решением)
+  engine/validation/ тесты на каждое constraint-правило, RuleValidationEngine
+                     (RANGE + CONSTRAINT через мок-реестр)
+  service/impl/      ExperimentServiceImplTest, ModelServiceImplTest,
+                     ComparisonServiceImplTest (моки на repositories и engines)
+```

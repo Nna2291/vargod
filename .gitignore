@@ -7,9 +7,6 @@ out/
 *.iml
 *.ipr
 *.iws
-*.bat
-gradlew
-gradle/
 data/
 *.db
 *.mv.db

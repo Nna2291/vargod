@@ -3,6 +3,7 @@
 build/
 out/
 .idea/
+.vscode/
 *.iml
 *.ipr
 *.iws
@@ -13,3 +14,18 @@ data/
 *.db
 *.mv.db
 *.trace.db
+frontend/node_modules/
+frontend/dist/
+logs/
+
+# Локальные конфиги и секреты — НЕ коммитить.
+.env
+.env.local
+.env.*.local
+app-cli/vargod.properties
+*.pem
+*.key
+*.p12
+
+# Локальные планы Claude Code.
+.claude/

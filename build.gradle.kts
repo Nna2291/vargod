@@ -1,61 +1,47 @@
+// Корневой build-файл мультимодульного проекта Vargod.
+// Каждый модуль (domain, data-access, business-logic, app-cli, api) компилируется
+// в отдельный файл программной сборки (JAR) — отдельную единицу развёртывания.
+// Здесь — только общая конфигурация, применяемая ко всем модулям.
+
 plugins {
-    kotlin("jvm") version "1.9.25"
-    application
-    jacoco
+    kotlin("jvm") version "1.9.25" apply false
+    kotlin("plugin.spring") version "1.9.25" apply false
+    id("org.springframework.boot") version "3.3.5" apply false
+    id("io.spring.dependency-management") version "1.1.6" apply false
 }
 
-application {
-    mainClass.set("com.vargod.ui.cli.AppKt")
-}
+subprojects {
+    apply(plugin = "org.jetbrains.kotlin.jvm")
 
-group = "com.vargod"
-version = "1.0.0"
+    group = "com.vargod"
+    version = "1.0.0"
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-}
-
-repositories {
-    maven { url = uri("https://repo1.maven.org/maven2/") }
-    mavenCentral()
-}
-
-dependencies {
-    implementation(kotlin("stdlib"))
-    implementation("org.apache.commons:commons-math3:3.6.1")
-    implementation("org.postgresql:postgresql:42.7.4")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1")
-
-    testImplementation(platform("org.junit:junit-bom:5.10.2"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("io.mockk:mockk:1.13.10")
-    testImplementation(kotlin("test"))
-    testImplementation("org.testcontainers:postgresql:1.20.4")
-    testImplementation("org.testcontainers:junit-jupiter:1.20.4")
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions {
-        jvmTarget = "11"
-        freeCompilerArgs = listOf("-Xjsr305=strict")
+    repositories {
+        mavenCentral()
     }
-}
 
-tasks.test {
-    useJUnitPlatform()
-    finalizedBy(tasks.jacocoTestReport)
-}
-
-tasks.jacocoTestReport {
-    dependsOn(tasks.test)
-    reports {
-        html.required.set(true)
-        xml.required.set(true)
-        csv.required.set(false)
+    // Единый тулчейн Java 17 для всех модулей (требование Spring Boot 3.x).
+    extensions.configure<org.gradle.api.plugins.JavaPluginExtension> {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(17))
+        }
     }
-}
 
-jacoco {
-    toolVersion = "0.8.11"
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        kotlinOptions {
+            jvmTarget = "17"
+            freeCompilerArgs = listOf("-Xjsr305=strict")
+        }
+    }
+
+    tasks.withType<Test>().configureEach {
+        useJUnitPlatform()
+    }
+
+    dependencies {
+        "testImplementation"(platform("org.junit:junit-bom:5.10.2"))
+        "testImplementation"("org.junit.jupiter:junit-jupiter")
+        "testImplementation"("io.mockk:mockk:1.13.10")
+        "testImplementation"("org.jetbrains.kotlin:kotlin-test")
+    }
 }

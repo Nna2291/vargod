@@ -3,29 +3,35 @@
 
 SHOW_LEGEND()
 
-title Vargod — L3: Компоненты API Server (Kotlin, Spring Boot)
+title Vargod — L3: Компоненты серверной части
 
-Container(spa, "Web SPA", "TypeScript, React", "Фронтенд")
-ContainerDb(db, "PostgreSQL", "", "СУБД")
+Container(spa, "Веб-GUI", "React SPA", "Фронтенд")
+ContainerDb(db, "PostgreSQL", "СУБД", "База данных")
 
-Container_Boundary(api, "API Server") {
-    Component(controllers, "REST Controllers", "Spring MVC (Kotlin)", "ModelController, ExperimentController, ComparisonController, DatasetController, InterpolationController, ValidatorController. Маршрутизация HTTP, сериализация DTO, аутентификация (Spring Security).")
-    Component(services, "Service Layer", "Kotlin", "ExperimentService, ModelService, ComparisonService, DatasetService, InterpolationService, ValidatorService. Оркестрация бизнес-логики через интерфейсы (DI). Контроллеры и сервисы зависят от интерфейсов, что позволяет заменить реализацию без изменения вышестоящих слоёв.")
-    Component(simulation, "Simulation Engine", "Kotlin, Apache Commons Math", "Численное решение систем ODE методами Рунге-Кутты (RK45, RK23). Реализует SimulationEngine. Через ModelRegistry получает реализацию OdeModel по коду модели (SIR, LOTKA_VOLTERRA, ...) — уравнения зашиты в коде, не в БД.")
-    Component(validation, "Validation Engine", "Kotlin", "Применяет набор Validator к ParameterSet. Поддерживает RANGE-проверки и CONSTRAINT-инварианты (например, S+I+R=N для SIR). Реализует интерфейс ValidationEngine.")
-    Component(interpolation, "Interpolation Engine", "Kotlin, Apache Commons Math", "Численный анализ загруженных пользователем таблиц данных: интерполяция (linear, cubic spline, Lagrange, Newton) и экстраполяция (linear, polynomial, exponential). Через InterpolationMethodRegistry получает реализацию метода по коду. Отдельный контур, независимый от ODE-симуляции.")
-    Component(repositories, "Repository Layer", "Spring Data JPA (Kotlin)", "ExperimentRepository, ModelRepository, DatasetRepository, ValidationResultRepository, ComparisonRepository. Паттерн Repository. Изолирует доступ к БД.")
-    Component(filestorage, "File Storage", "Kotlin (interface + DatabaseBlobStorage в MVP)", "Абстракция над персистентным хранилищем файлов. Контракт FileStorage, реализация DatabaseBlobStorage (BYTEA через JPA). Подготовлена замена на LocalFileStorage / S3FileStorage без изменения вышестоящих слоёв.")
+Container_Boundary(api, "API-сервер (Spring Boot)") {
+    Component(controllers, "REST-контроллеры", "Spring MVC, Kotlin", "ModelController, ExperimentController,\nComparisonController, SessionController.\nМаршрутизация HTTP, (де)сериализация JSON.")
+    Component(exHandler, "ApiExceptionHandler", "Spring @RestControllerAdvice", "Единая обработка исключений:\nдоменные ошибки → HTTP-статусы, логирование.")
+    Component(beansConfig, "ServiceConfig / WebConfig", "Spring @Configuration", "Корень композиции: собирает граф bean-ов\nиз компонентов бизнес-логики и доступа к данным. CORS.")
 }
 
-Rel(spa, controllers, "REST-запросы", "JSON / HTTPS")
+Container_Boundary(bl, "Компонент бизнес-логики") {
+    Component(services, "Сервисы", "Kotlin", "ExperimentService, ModelService,\nComparisonService — оркестрация сценариев\nчерез интерфейсы (DIP).")
+    Component(simulation, "Движок симуляции", "Kotlin + Apache Commons Math", "Численное решение систем ОДУ\nметодом Дорман–Принс 5(4).")
+    Component(validation, "Движок валидации", "Kotlin", "RANGE- и CONSTRAINT-проверки\nпараметров эксперимента.")
+}
+
+Container_Boundary(da, "Компонент доступа к данным") {
+    Component(repositories, "JDBC-репозитории", "Kotlin + JDBC", "JdbcExperimentRepository,\nJdbcModelTemplateRepository,\nJdbcComparisonRepository. Паттерн Repository.")
+}
+
+Rel(spa, controllers, "REST-запросы", "JSON / HTTP")
 Rel(controllers, services, "Вызывает методы сервисов")
-Rel(services, simulation, "Запускает ODE-симуляцию")
+Rel(controllers, exHandler, "Исключения перехватываются")
+Rel(beansConfig, services, "Создаёт и связывает")
+Rel(beansConfig, repositories, "Создаёт и связывает")
+Rel(services, simulation, "Запускает ОДУ-симуляцию")
 Rel(services, validation, "Валидирует параметры")
-Rel(services, interpolation, "Запускает интерполяцию / экстраполяцию")
-Rel(services, repositories, "Читает / сохраняет сущности")
-Rel(services, filestorage, "Сохраняет / читает контент файла")
-Rel(filestorage, repositories, "Через JPA (для INLINE_DB)")
+Rel(services, repositories, "Читает / сохраняет (через интерфейсы домена)")
 Rel(repositories, db, "SQL-запросы", "JDBC")
 
 @enduml

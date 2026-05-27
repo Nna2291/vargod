@@ -1,0 +1,16 @@
+# ============================================================
+#  Vargod CLI — пример внешнего конфиг-файла.
+#  Скопируйте в vargod.properties (он в .gitignore) и подправьте.
+#  Переменные окружения (DB_URL, DB_USER, DB_PASSWORD, SIMULATION_MAX_STEP,
+#  VARGOD_JWT_SECRET и т.д.) имеют приоритет над значениями этого файла.
+# ============================================================
+
+# --- Подключение к PostgreSQL ---
+db.url=jdbc:postgresql://localhost:5432/vargod
+db.user=vargod
+db.password=change-me
+
+# --- ODE-симуляция ---
+simulation.maxStep=1.0
+simulation.relativeTolerance=1.0e-10
+simulation.absoluteTolerance=1.0e-10

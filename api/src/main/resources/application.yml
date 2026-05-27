@@ -1,0 +1,28 @@
+# Конфигурация API-сервера Vargod.
+# Строка подключения к БД и параметры бизнес-логики берутся компонентом
+# ConfigLoader из переменных окружения (DB_URL, DB_USER, DB_PASSWORD,
+# SIMULATION_MAX_STEP) — задаются в docker-compose.yml.
+
+server:
+  port: 8080
+
+spring:
+  application:
+    name: vargod-api
+
+# Логирование: и в консоль, и в файл (как в технологическом UI).
+logging:
+  file:
+    name: logs/vargod-api.log
+  level:
+    com.vargod: DEBUG
+
+# OpenAPI / Swagger UI. UI открывается на /swagger-ui.html, JSON-спецификация
+# на /v3/api-docs. SecurityConfig пермиссит оба пути без аутентификации.
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+  api-docs:
+    path: /v3/api-docs

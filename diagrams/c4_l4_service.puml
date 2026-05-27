@@ -4,9 +4,9 @@ skinparam classFontSize 12
 skinparam packageFontSize 13
 hide empty members
 
-title Vargod — L4: Компонент бизнес-логики (Service Layer)
+title Vargod — L4: Компонент бизнес-логики (business-logic)
 
-package "Service Interfaces" #eef {
+package "Интерфейсы (com.vargod.service, com.vargod.engine)" #eef {
     interface ExperimentService {
         +create(req: CreateExperimentRequest, userId: UUID): Experiment
         +getById(id: UUID): Experiment
@@ -15,305 +15,92 @@ package "Service Interfaces" #eef {
         +runSimulation(experimentId: UUID): SimulationResult
         +publish(id: UUID, userId: UUID): Experiment
     }
-
     interface ModelService {
         +listAll(): List<ModelTemplate>
         +getById(id: UUID): ModelTemplate
     }
-
     interface ComparisonService {
         +create(experimentIds: List<UUID>, userId: UUID): Comparison
         +getById(id: UUID): Comparison
         +listByUser(userId: UUID): List<Comparison>
     }
-
     interface SimulationEngine {
         +solve(model: ModelTemplate, params: ParameterSet): SimulationResult
     }
-
     interface OdeModel {
         +code(): String
         +variables(): List<String>
         +parameters(): List<String>
-        +derivatives(state: DoubleArray, params: Map<String, Double>, t: Double): DoubleArray
+        +derivatives(state: DoubleArray, params: Map<String,Double>, t: Double): DoubleArray
     }
-
     interface ModelRegistry {
         +getByCode(code: String): OdeModel
         +listAll(): Map<String, OdeModel>
     }
-
     interface ValidationEngine {
-        +validate(values: Map<String, Any>, validators: List<Validator>): List<ValidationResult>
+        +validate(values: Map<String,Any>, validators: List<Validator>): List<ValidationResult>
     }
-
-    interface DatasetService {
-        +upload(file: MultipartFile, userId: UUID): Dataset
-        +getById(id: UUID): Dataset
-        +download(id: UUID): DatasetContent
-        +listByUser(userId: UUID): List<Dataset>
-        +delete(id: UUID, userId: UUID)
-    }
-
-    interface FileStorage {
-        +store(content: ByteArray, mimeType: String): StorageRef
-        +read(ref: StorageRef): ByteArray
-        +delete(ref: StorageRef)
-    }
-
-    interface InterpolationService {
-        +submit(req: InterpolationRequest, userId: UUID): Interpolation
-        +getById(id: UUID): Interpolation
-        +listByUser(userId: UUID): List<Interpolation>
-    }
-
-    interface InterpolationEngine {
-        +run(table: DataTable, methodCode: String, params: Map<String, Any>): InterpolationResult
-    }
-
-    interface InterpolationMethod {
-        +code(): String
-        +kind(): InterpolationKind
-        +apply(xs: DoubleArray, ys: DoubleArray, params: Map<String, Any>): InterpolationResult
-    }
-
-    interface InterpolationMethodRegistry {
-        +getByCode(code: String): InterpolationMethod
-        +listAll(): Map<String, InterpolationMethod>
-    }
-
-    interface ValidatorService {
-        +create(req: CreateValidatorRequest, userId: UUID): Validator
-        +getById(id: UUID): Validator
-        +listForModel(modelTemplateId: UUID): List<Validator>
-        +listForDataset(datasetId: UUID): List<Validator>
-        +listAvailableRules(): RuleCatalog
-        +delete(id: UUID, userId: UUID)
-    }
-
     interface ConstraintRule {
         +type(): String
-        +metadata(): RuleMetadata
-        +check(values: Map<String, Any>, params: Map<String, Any>): Boolean
+        +check(values: Map<String,Any>, params: Map<String,Any>): Boolean
     }
-
     interface ConstraintRuleRegistry {
         +getByType(type: String): ConstraintRule
         +listAll(): Map<String, ConstraintRule>
     }
 }
 
-package "Service Implementations" #efe {
+package "Реализации (com.vargod.service.impl, com.vargod.engine.ode|validation)" #efe {
     class ExperimentServiceImpl {
         -experimentRepository: ExperimentRepository
         -modelRepository: ModelTemplateRepository
         -simulationEngine: SimulationEngine
         -validationEngine: ValidationEngine
-        +create(req: CreateExperimentRequest, userId: UUID): Experiment
-        +runSimulation(experimentId: UUID): SimulationResult
-        +publish(id: UUID, userId: UUID): Experiment
     }
-
     class ModelServiceImpl {
         -modelRepository: ModelTemplateRepository
-        +listAll(): List<ModelTemplate>
-        +getById(id: UUID): ModelTemplate
     }
-
-    class OdeSimulationEngine {
-        -modelRegistry: ModelRegistry
-        +solve(model: ModelTemplate, params: ParameterSet): SimulationResult
-        -wrapAsCommonsMath(ode: OdeModel, params: ParameterSet): FirstOrderDifferentialEquations
-        -runRK45(ode: FirstOrderDifferentialEquations, params: ParameterSet): ODESolution
-    }
-
-    class SirModel {
-        +variables(): List<String>
-        +parameters(): List<String>
-        +derivatives(state, params, t): DoubleArray
-    }
-
-    class LotkaVolterraModel {
-        +variables(): List<String>
-        +parameters(): List<String>
-        +derivatives(state, params, t): DoubleArray
-    }
-
-    class LogisticGrowthModel {
-        +variables(): List<String>
-        +parameters(): List<String>
-        +derivatives(state, params, t): DoubleArray
-    }
-
-    class MapModelRegistry {
-        -byCode: Map<String, OdeModel>
-        +getByCode(code: String): OdeModel
-        +listAll(): Map<String, OdeModel>
-    }
-
-    class InterpolationServiceImpl {
-        -datasetRepository: DatasetRepository
-        -interpolationRepository: InterpolationRepository
-        -fileStorage: FileStorage
-        -interpolationEngine: InterpolationEngine
-        -validationEngine: ValidationEngine
-        +submit(req: InterpolationRequest, userId: UUID): Interpolation
-    }
-
-    class CommonsMathInterpolationEngine {
-        -registry: InterpolationMethodRegistry
-        +run(table: DataTable, methodCode: String, params: Map<String, Any>): InterpolationResult
-    }
-
-    class LinearInterpolator {
-        +code(): String
-        +kind(): InterpolationKind
-        +apply(xs, ys, params): InterpolationResult
-    }
-
-    class CubicSplineInterpolator {
-        +code(): String
-        +kind(): InterpolationKind
-        +apply(xs, ys, params): InterpolationResult
-    }
-
-    class LagrangeInterpolator {
-        +code(): String
-        +kind(): InterpolationKind
-        +apply(xs, ys, params): InterpolationResult
-    }
-
-    class NewtonInterpolator {
-        +code(): String
-        +kind(): InterpolationKind
-        +apply(xs, ys, params): InterpolationResult
-    }
-
-    class LinearExtrapolator {
-        +code(): String
-        +kind(): InterpolationKind
-        +apply(xs, ys, params): InterpolationResult
-    }
-
-    class PolynomialExtrapolator {
-        +code(): String
-        +kind(): InterpolationKind
-        +apply(xs, ys, params): InterpolationResult
-    }
-
-    class ExponentialExtrapolator {
-        +code(): String
-        +kind(): InterpolationKind
-        +apply(xs, ys, params): InterpolationResult
-    }
-
-    class MapInterpolationMethodRegistry {
-        -byCode: Map<String, InterpolationMethod>
-        +getByCode(code: String): InterpolationMethod
-        +listAll(): Map<String, InterpolationMethod>
-    }
-
-    class ValidatorServiceImpl {
-        -validatorRepository: ValidatorRepository
-        -datasetRepository: DatasetRepository
-        +create(req: CreateValidatorRequest, userId: UUID): Validator
-        -assertOwner(datasetId: UUID, userId: UUID)
-        -assertColumnExists(datasetId: UUID, column: String)
-    }
-
-    class SumEqualsValueRule {
-        +type(): String
-        +check(values, params): Boolean
-    }
-
-    class SumEqualsFieldRule {
-        +type(): String
-        +check(values, params): Boolean
-    }
-
-    class OrderedRule {
-        +type(): String
-        +check(values, params): Boolean
-    }
-
-    class MapConstraintRuleRegistry {
-        -byType: Map<String, ConstraintRule>
-        +getByType(type: String): ConstraintRule
-        +listAll(): Map<String, ConstraintRule>
-    }
-
-    class RuleValidationEngine {
-        +validate(values: Map<String, Any>, validators: List<Validator>): List<ValidationResult>
-        -applyRangeCheck(v: Validator, value: Any): ValidationResult
-        -applyConstraintCheck(v: Validator, values: Map<String, Any>): ValidationResult
-    }
-
     class ComparisonServiceImpl {
         -comparisonRepository: ComparisonRepository
         -experimentRepository: ExperimentRepository
-        +create(experimentIds: List<UUID>, userId: UUID): Comparison
-        -assertSameModel(experiments: List<Experiment>)
     }
-
-    class DatasetServiceImpl {
-        -datasetRepository: DatasetRepository
-        -fileStorage: FileStorage
-        +upload(file: MultipartFile, userId: UUID): Dataset
-        +download(id: UUID): DatasetContent
-        -validateMimeType(mime: String)
-        -validateSize(bytes: Long)
+    class OdeSimulationEngine {
+        -modelRegistry: ModelRegistry
+        -maxStep: Double
     }
-
-    class DatabaseBlobStorage {
-        -datasetRepository: DatasetRepository
-        +store(content: ByteArray, mimeType: String): StorageRef
-        +read(ref: StorageRef): ByteArray
-        +delete(ref: StorageRef)
-    }
+    class SirModel
+    class LotkaVolterraModel
+    class LogisticGrowthModel
+    class MapModelRegistry
+    class RuleValidationEngine
+    class MapConstraintRuleRegistry
+    class SumEqualsValueRule
+    class SumEqualsFieldRule
+    class OrderedRule
 
     ExperimentServiceImpl ..|> ExperimentService
     ModelServiceImpl ..|> ModelService
+    ComparisonServiceImpl ..|> ComparisonService
     OdeSimulationEngine ..|> SimulationEngine
     RuleValidationEngine ..|> ValidationEngine
-    ComparisonServiceImpl ..|> ComparisonService
-    DatasetServiceImpl ..|> DatasetService
-    DatabaseBlobStorage ..|> FileStorage
     SirModel ..|> OdeModel
     LotkaVolterraModel ..|> OdeModel
     LogisticGrowthModel ..|> OdeModel
     MapModelRegistry ..|> ModelRegistry
-
-    InterpolationServiceImpl ..|> InterpolationService
-    CommonsMathInterpolationEngine ..|> InterpolationEngine
-    LinearInterpolator ..|> InterpolationMethod
-    CubicSplineInterpolator ..|> InterpolationMethod
-    LagrangeInterpolator ..|> InterpolationMethod
-    NewtonInterpolator ..|> InterpolationMethod
-    LinearExtrapolator ..|> InterpolationMethod
-    PolynomialExtrapolator ..|> InterpolationMethod
-    ExponentialExtrapolator ..|> InterpolationMethod
-    MapInterpolationMethodRegistry ..|> InterpolationMethodRegistry
-    ValidatorServiceImpl ..|> ValidatorService
+    MapConstraintRuleRegistry ..|> ConstraintRuleRegistry
     SumEqualsValueRule ..|> ConstraintRule
     SumEqualsFieldRule ..|> ConstraintRule
     OrderedRule ..|> ConstraintRule
-    MapConstraintRuleRegistry ..|> ConstraintRuleRegistry
 
     ExperimentServiceImpl --> SimulationEngine
     ExperimentServiceImpl --> ValidationEngine
-    DatasetServiceImpl --> FileStorage
     OdeSimulationEngine --> ModelRegistry
     MapModelRegistry o-- OdeModel
-    InterpolationServiceImpl --> InterpolationEngine
-    InterpolationServiceImpl --> ValidationEngine
-    InterpolationServiceImpl --> FileStorage
-    CommonsMathInterpolationEngine --> InterpolationMethodRegistry
-    MapInterpolationMethodRegistry o-- InterpolationMethod
     RuleValidationEngine --> ConstraintRuleRegistry
     MapConstraintRuleRegistry o-- ConstraintRule
 }
 
-package "Domain Model" #fee {
+package "Доменная модель (com.vargod.domain)" #fee {
     class ModelTemplate {
         +id: UUID
         +code: String
@@ -322,137 +109,48 @@ package "Domain Model" #fee {
         +solverType: String
         +validators: List<Validator>
     }
-
     class Validator {
         +id: UUID
         +name: String
         +checkType: ValidatorType
         +targetKind: ValidatorTargetKind
         +targetField: String
-        +rules: Map<String, Any>
+        +rules: Map<String,Any>
     }
-
-    class Dataset {
-        +id: UUID
-        +name: String
-        +format: String
-        +data: String
-    }
-
     class Comparison {
         +id: UUID
         +name: String?
         +userId: UUID
         +experiments: List<Experiment>
     }
-
     class ValidationResult {
         +status: ValidationStatus
         +message: String?
         +validatorId: UUID
     }
-
     enum ValidatorType {
         RANGE
         CONSTRAINT
     }
-
     enum ValidatorTargetKind {
         PARAMETER
         DATASET_COLUMN
     }
-
     enum ValidationStatus {
         PASS
         FAIL
-    }
-
-    class StorageRef {
-        +kind: StorageKind
-        +location: String
-    }
-
-    class DatasetContent {
-        +bytes: ByteArray
-        +mimeType: String
-        +originalFilename: String
-    }
-
-    enum StorageKind {
-        INLINE_DB
-        LOCAL_FS
-        S3
-    }
-
-    class DataTable {
-        +columns: List<String>
-        +rows: List<Map<String, Any>>
-        +columnAsDoubles(name: String): DoubleArray
-    }
-
-    class Interpolation {
-        +id: UUID
-        +datasetId: UUID
-        +methodCode: String
-        +kind: InterpolationKind
-        +sourceColumn: String
-        +parameters: Map<String, Any>
-        +result: InterpolationResult?
-        +status: InterpolationStatus
-        +createdAt: Instant
-        +userId: UUID
-    }
-
-    class InterpolationRequest {
-        +datasetId: UUID
-        +methodCode: String
-        +sourceColumn: String
-        +parameters: Map<String, Any>
-        +columnValidatorIds: List<UUID>
-    }
-
-    class InterpolationResult {
-        +xQuery: DoubleArray
-        +yPredicted: DoubleArray
-        +diagnostics: Map<String, Any>
-    }
-
-    enum InterpolationKind {
-        INTERPOLATE
-        EXTRAPOLATE
-    }
-
-    enum InterpolationStatus {
-        PENDING
-        COMPLETED
-        FAILED
-    }
-
-    class RuleMetadata {
-        +type: String
-        +displayName: String
-        +description: String
-        +applicableTo: Set<ValidatorTargetKind>
-        +params: List<RuleParamSpec>
-    }
-
-    class RuleParamSpec {
-        +name: String
-        +type: String
-        +required: Boolean
-        +description: String
-    }
-
-    class RuleCatalog {
-        +rangeRule: RuleMetadata
-        +constraintRules: List<RuleMetadata>
     }
 
     ModelTemplate --> Validator
     Validator --> ValidatorType
     Validator --> ValidatorTargetKind
     ValidationResult --> ValidationStatus
-    StorageRef --> StorageKind
 }
+
+note bottom of "Реализации (com.vargod.service.impl, com.vargod.engine.ode|validation)"
+  DIP: реализации сервисов зависят от интерфейсов
+  репозиториев и движков. maxStep движка симуляции
+  задаётся внешней конфигурацией (vargod.properties).
+end note
 
 @enduml

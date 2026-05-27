@@ -2,7 +2,9 @@
 .gitignore
 .idea/
 .gradle/
+**/.gradle/
 build/
+**/build/
 out/
 *.iml
 *.ipr
@@ -12,3 +14,6 @@ diagrams/
 img/
 .DS_Store
 .claude/
+frontend/node_modules/
+frontend/dist/
+logs/

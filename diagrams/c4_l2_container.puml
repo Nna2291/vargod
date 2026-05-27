@@ -3,27 +3,44 @@
 
 SHOW_LEGEND()
 
-title Vargod — L2: Контейнеры
+title Vargod — L2: Контейнеры и компоненты-сборки
 
 Person(researcher, "Исследователь")
 Person(guest, "Гость")
-Person(qa, "QA / разработчик", "Использует технологический UI\nдля системного тестирования")
+Person(qa, "QA / разработчик")
 
 System_Boundary(vargod, "Vargod") {
-    Container(spa, "Web SPA", "TypeScript, React", "Интерфейс пользователя:\nкаталог моделей, форма параметров,\nграфик результатов, сравнение экспериментов.")
+    Container(spa, "Веб-GUI", "React, TypeScript, Vite + nginx", "Пользовательский графический интерфейс (SPA, паттерн MVVM):\nкаталог моделей, форма параметров, графики результатов, сравнение.")
 
-    Container(cli, "CLI Test UI", "Kotlin", "Технологический UI (Lab 5).\nКонсольный REPL для системного тестирования\nвсех Use Case через те же сервис-интерфейсы,\nна которых работает Web SPA.")
+    Container(cli, "Технологический UI", "Kotlin, app-cli", "Консольный REPL для системного тестирования\nвсех сценариев. Отдельная сборка-приложение.")
 
-    Container(api, "API Server / Core", "Kotlin", "Сервисный слой (Lab 3) + JDBC-репозитории (Lab 4):\nуправление экспериментами, запуск ODE-симуляции,\nвалидация параметров, сравнение результатов.")
+    Container(api, "API-сервер", "Kotlin, Spring Boot, api", "Компонент связи GUI и бизнес-логики:\nREST-контроллеры (Spring MVC).")
 
-    ContainerDb(db, "База данных", "PostgreSQL", "Хранит пользователей, шаблоны моделей,\nэксперименты, наборы параметров,\nрезультаты симуляций, датасеты, валидаторы.")
+    Container(businessLogic, "Бизнес-логика", "Kotlin JAR, business-logic", "Сервисы предметной области + движки\nсимуляции ОДУ и валидации.\nОтдельная сборка-компонент.")
+
+    Container(dataAccess, "Доступ к данным", "Kotlin JAR, data-access", "JDBC-репозитории, инициализация схемы,\nзаполнение БД. Отдельная сборка-компонент.")
+
+    Container(domain, "Доменное ядро", "Kotlin JAR, domain", "Сущности, исключения, интерфейсы\nрепозиториев, загрузчик конфигурации.\nОбщая сборка-контракт.")
+
+    ContainerDb(db, "База данных", "PostgreSQL 16", "Модели, эксперименты, параметры,\nрезультаты симуляций, сравнения.")
 }
 
-Rel(researcher, spa, "Использует")
-Rel(guest, spa, "Просматривает")
-Rel(qa, cli, "Команды в REPL")
-Rel(spa, api, "REST API")
-Rel(cli, api, "Прямые вызовы сервис-интерфейсов\n(тот же компонент бизнес-логики)")
-Rel(api, db, "Читает / записывает")
+Rel(researcher, spa, "Использует", "HTTPS")
+Rel(guest, spa, "Просматривает", "HTTPS")
+Rel(qa, cli, "Команды REPL")
+
+Rel(spa, api, "REST API", "JSON / HTTP")
+Rel(api, businessLogic, "Вызывает сервисы")
+Rel(api, dataAccess, "Связывает репозитории")
+Rel(cli, businessLogic, "Вызывает сервисы")
+Rel(cli, dataAccess, "Связывает репозитории")
+Rel(businessLogic, domain, "Зависит от контрактов")
+Rel(dataAccess, domain, "Реализует интерфейсы репозиториев")
+Rel(dataAccess, db, "Читает / записывает", "JDBC")
+
+note right of cli
+  Логирование (SLF4J/Logback) → лог-файл.
+  Конфигурирование → внешний vargod.properties.
+end note
 
 @enduml

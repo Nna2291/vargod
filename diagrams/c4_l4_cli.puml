@@ -33,7 +33,7 @@ package "CLI (com.vargod.ui.cli)" #eef {
     }
 
     class CompositionRoot {
-        -config: CliConfig
+        -config: AppConfig
         +bootstrap(): Pair<MainLoop, Console>
     }
 
@@ -127,13 +127,6 @@ package "CLI (com.vargod.ui.cli)" #eef {
         ComparisonFormatter ..|> Formatter
     }
 
-    package "bootstrap" {
-        class DataSeeder {
-            -dataSource: DataSource
-            +seedIfEmpty()
-        }
-    }
-
     ListModelsCommand           ..|> Command
     ShowModelCommand            ..|> Command
     ListPublicExperimentsCommand ..|> Command
@@ -155,7 +148,6 @@ package "CLI (com.vargod.ui.cli)" #eef {
     CompositionRoot --> MainLoop
     CompositionRoot --> CommandRouter
     CompositionRoot --> CommandContext
-    CompositionRoot --> DataSeeder
     CompositionRoot --> SystemConsole
     CompositionRoot --> Session
     MainLoop --> CommandRouter

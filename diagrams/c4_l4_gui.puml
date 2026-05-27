@@ -1,0 +1,110 @@
+@startuml c4_l4_gui
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+skinparam packageFontSize 13
+hide empty members
+
+title Vargod — L4: Компонент пользовательского GUI (React SPA, паттерн MVVM)
+
+package "View — представление (src/view)" #eef {
+    class App
+    package "pages" {
+        class CatalogPage
+        class ModelPage
+        class ExperimentsPage
+        class NewExperimentPage
+        class ExperimentPage
+        class ComparisonsPage
+        class ComparisonPage
+    }
+    package "components" {
+        class NavBar
+        class ParameterForm
+        class ResultChart
+        class StatusBadge
+        class ValidationAlert
+        class ModelCard
+        class StateView
+    }
+}
+
+package "ViewModel — модель представления (src/viewmodel)" #efe {
+    class SessionStore {
+        +userId: UUID?
+        +role: Role
+        +login()
+        +loginGuest()
+        +logout()
+    }
+    class useModels {
+        +models
+        +loading
+        +error
+    }
+    class useExperiments {
+        +experiments
+        +create()
+        +run()
+        +publish()
+    }
+    class useComparisons {
+        +comparisons
+        +create()
+    }
+    class modelParameters {
+        +deriveParameters(model): List<ParamSpec>
+    }
+}
+
+package "Model — модель (src/model)" #fee {
+    class ApiClient {
+        -userIdProvider
+        +request<T>(): Promise<T>
+    }
+    class modelsApi
+    class experimentsApi
+    class comparisonsApi
+    class sessionApi
+    class types
+}
+
+class "API-сервер (REST /api)" as api
+
+App --> CatalogPage
+App --> ModelPage
+App --> ExperimentsPage
+App --> NewExperimentPage
+App --> ExperimentPage
+App --> ComparisonsPage
+App --> ComparisonPage
+
+CatalogPage ..> useModels
+ModelPage ..> useModels
+ExperimentsPage ..> useExperiments
+NewExperimentPage ..> useExperiments
+NewExperimentPage ..> modelParameters
+ExperimentPage ..> useExperiments
+ComparisonsPage ..> useComparisons
+ComparisonPage ..> useComparisons
+NavBar ..> SessionStore
+
+useModels ..> modelsApi
+useExperiments ..> experimentsApi
+useComparisons ..> comparisonsApi
+SessionStore ..> sessionApi
+
+modelsApi --> ApiClient
+experimentsApi --> ApiClient
+comparisonsApi --> ApiClient
+sessionApi --> ApiClient
+ApiClient ..> types
+ApiClient --> api : REST (JSON), заголовок X-User-Id
+
+note bottom of "Model — модель (src/model)"
+  Однонаправленная зависимость слоёв: View -> ViewModel -> Model.
+  Model не импортирует React/ViewModel; userId передаётся в ApiClient
+  через провайдер, внедряемый в main.tsx (инверсия зависимости).
+  Компоненты (NavBar, ParameterForm, ResultChart, ...) переиспользуются страницами.
+end note
+
+@enduml

@@ -3,21 +3,18 @@
 
 SHOW_LEGEND()
 
-title Vargod — L3: Компоненты Web SPA (TypeScript, React)
+title Vargod — L3: Компоненты Веб-GUI (React SPA, паттерн MVVM)
 
-Container(api, "API Server", "Kotlin, Spring Boot", "Бэкенд")
+Container(api, "API-сервер", "Kotlin, Spring Boot", "Бэкенд (REST)")
 
-Container_Boundary(spa, "Web SPA") {
-    Component(pages, "Pages", "React, TypeScript", "ModelCatalogPage, ExperimentPage, ComparisonPage, ProfilePage, DataAnalysisPage (загрузка таблиц + интерполяция/экстраполяция). Верхнеуровневые маршруты, компоновка разделов.")
-    Component(uikit, "UI Components", "React, TypeScript", "ParameterForm, ResultChart, ModelCard, ComparisonChart, ValidationAlert, FileUpload (drag-drop CSV/JSON), MethodSelector (выбор interpolation/extrapolation метода), InterpolationChart (точки + сплайн/полином/прогноз). Переиспользуемые компоненты представления.")
-    Component(state, "State Manager", "Zustand (TypeScript)", "Глобальное состояние: текущий пользователь, активный эксперимент, список моделей. Отделяет логику управления состоянием от UI.")
-    Component(apiclient, "API Client", "TypeScript, axios", "Типизированные обёртки над REST-эндпоинтами. Обработка ошибок, интерцепторы авторизации (JWT). Изолирует детали HTTP от компонентов.")
+Container_Boundary(spa, "Веб-GUI") {
+    Component(view, "View — страницы и компоненты", "React, TSX", "Страницы (каталог моделей, эксперименты,\nсравнения) и переиспользуемые компоненты\n(NavBar, ParameterForm, ResultChart, StatusBadge).\nТолько отображение и пользовательский ввод.")
+    Component(viewmodel, "ViewModel — сторы и хуки", "Zustand, React-хуки", "Состояние UI и команды: sessionStore,\nuseCatalog, useExperiments, useComparisons.\nСвязующий слой между View и Model, без JSX.")
+    Component(model, "Model — типы и API-клиент", "TypeScript, axios", "TS-типы доменных сущностей и типизированные\nобёртки REST-эндпоинтов. Единственный слой,\nобщающийся с API-сервером.")
 }
 
-Rel(pages, uikit, "Рендерит компоненты")
-Rel(pages, state, "Читает / обновляет состояние")
-Rel(pages, apiclient, "Вызывает API-методы")
-Rel(uikit, state, "Читает состояние")
-Rel(apiclient, api, "REST-запросы", "JSON / HTTPS")
+Rel(view, viewmodel, "Читает состояние,\nвызывает команды")
+Rel(viewmodel, model, "Запрашивает данные,\nотправляет изменения")
+Rel(model, api, "REST-запросы", "JSON / HTTP")
 
 @enduml

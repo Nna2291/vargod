@@ -1,12 +1,18 @@
+# ============================================================
+#  Vargod — локальная сборка через docker-compose.
+#  Переменные читаются из .env (см. .env.example). Если файла нет —
+#  применяются dev-дефолты после знака `:-`, и compose стартует с placeholder-ами.
+# ============================================================
+
 services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: vargod
-      POSTGRES_USER: vargod
-      POSTGRES_PASSWORD: vargod
+      POSTGRES_DB: ${POSTGRES_DB:-vargod}
+      POSTGRES_USER: ${POSTGRES_USER:-vargod}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vargod}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U vargod -d vargod"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vargod} -d ${POSTGRES_DB:-vargod}"]
       interval: 2s
       timeout: 3s
       retries: 30
@@ -15,17 +21,50 @@ services:
     ports:
       - "5432:5432"
 
-  app:
-    build: .
+  cli:
+    build:
+      context: .
+      dockerfile: app-cli/Dockerfile
     depends_on:
       db:
         condition: service_healthy
     environment:
-      DB_URL: jdbc:postgresql://db:5432/vargod
-      DB_USER: vargod
-      DB_PASSWORD: vargod
+      DB_URL: ${DB_URL:-jdbc:postgresql://db:5432/vargod}
+      DB_USER: ${DB_USER:-vargod}
+      DB_PASSWORD: ${DB_PASSWORD:-vargod}
+    volumes:
+      - ./logs:/app/logs
     stdin_open: true
     tty: true
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: ${DB_URL:-jdbc:postgresql://db:5432/vargod}
+      DB_USER: ${DB_USER:-vargod}
+      DB_PASSWORD: ${DB_PASSWORD:-vargod}
+      VARGOD_JWT_SECRET: ${VARGOD_JWT_SECRET:-dev-only-change-me-in-real-deployment-32bytes-min}
+      VARGOD_JWT_TTL_SECONDS: ${VARGOD_JWT_TTL_SECONDS:-3600}
+      VARGOD_ADMIN_EMAIL: ${VARGOD_ADMIN_EMAIL:-}
+      VARGOD_ADMIN_PASSWORD: ${VARGOD_ADMIN_PASSWORD:-}
+      VARGOD_CORS_ALLOWED_ORIGINS: ${VARGOD_CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:8081}
+    volumes:
+      - ./logs:/app/logs
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+    depends_on:
+      - api
+    ports:
+      - "8081:80"
 
 volumes:
   vargod-db:

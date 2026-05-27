@@ -1,0 +1,8 @@
+# TODO: добавить скриншоты:
+#   catalog.png            — главная страница / каталог моделей
+#   experiment-chart.png   — страница эксперимента с графиком (Recharts)
+#   admin-users.png        — admin-панель: вкладка Users
+#   admin-validators.png   — admin-панель: динамическая форма валидатора
+#   login.png              — экран логина/регистрации
+# Скриншоты делаются после `docker compose up -d --build`, на http://localhost:8081
+# и кладутся в этот каталог. Ссылки уже расставлены в корневом README.md.

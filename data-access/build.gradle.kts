@@ -19,6 +19,6 @@ dependencies {
     runtimeOnly("org.flywaydb:flyway-database-postgresql:10.21.0")
 
     testImplementation(testFixtures(project(":domain")))
-    testImplementation("org.testcontainers:postgresql:1.20.4")
-    testImplementation("org.testcontainers:junit-jupiter:1.20.4")
+    testImplementation("org.testcontainers:postgresql:1.21.4")
+    testImplementation("org.testcontainers:junit-jupiter:1.21.4")
 }

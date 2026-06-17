@@ -15,7 +15,7 @@ dependencies {
     implementation(project(":business-logic"))
 
     // Реализация SLF4J — система логирования (подключается только в рантайме)
-    runtimeOnly("ch.qos.logback:logback-classic:1.5.6")
+    runtimeOnly("ch.qos.logback:logback-classic:1.5.33")
     runtimeOnly("org.postgresql:postgresql:42.7.4")
 }
 

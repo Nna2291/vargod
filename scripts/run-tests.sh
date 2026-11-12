@@ -149,9 +149,9 @@ if [[ -n "$MODULE" ]]; then
   [[ $REPORTS -eq 1 ]] && TASKS+=(":$MODULE:allureReport")
   TASKS+=("coverageSummary")
 elif [[ $REPORTS -eq 1 ]]; then
-  TASKS+=("unitTests")                       # тесты + coverageReport + coverageSummary + Allure
+  TASKS+=("unitTests")                       # тесты + coverageSummary + Allure
 else
-  TASKS+=(":domain:test" ":business-logic:test" ":data-access:test" "coverageReport" "coverageSummary")
+  TASKS+=(":domain:test" ":business-logic:test" ":data-access:test" "coverageSummary")
 fi
 
 if [[ $OFFLINE -eq 1 ]]; then
@@ -169,8 +169,7 @@ set -e
 echo
 echo "================================ Отчёты ================================"
 echo "Тесты (HTML, по модулям):  */build/reports/tests/test/index.html"
-[[ -f build/reports/jacoco/coverageReport/html/index.html ]] && \
-  echo "Покрытие (HTML, общее):   build/reports/jacoco/coverageReport/html/index.html"
+echo "Покрытие (HTML):          */build/reports/jacoco/test/html/index.html"
 ALLURE_DIR="$( (find build/reports ${MODULE:+"$MODULE/build/reports"} -maxdepth 3 -type f -name index.html -path '*allure-report*' 2>/dev/null || true) | head -n1 | xargs -r dirname)"
 if [[ -n "$ALLURE_DIR" ]]; then
   echo "Allure:                   $ALLURE_DIR/index.html"

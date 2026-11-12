@@ -211,33 +211,17 @@ subprojects {
 //  Агрегированные отчёты по модулям — объектам тестирования
 // ---------------------------------------------------------------------------
 
+// Корневому проекту нужен репозиторий: отсюда скачивается allure-commandline.
+repositories {
+    mavenCentral()
+}
+
 allure {
     version.set(allureCommandlineVersion)
 }
 
 dependencies {
     testedModules.forEach { "allureAggregateReport"(project(it)) }
-}
-
-/** HTML/XML/CSV-отчёт покрытия, объединённый по domain, business-logic, data-access. */
-val coverageReport by tasks.registering(JacocoReport::class) {
-    group = "verification"
-    description = "Aggregated JaCoCo coverage report (lines + branches) for domain, business-logic, data-access."
-    val modules = testedModules.map { project(it) }
-    modules.forEach { m -> mustRunAfter(m.tasks.named("test")) }
-    executionData.from(
-        project.files(modules.map { m -> m.layout.buildDirectory.file("jacoco/test.exec") }).filter { it.exists() }
-    )
-    modules.forEach { m ->
-        val main = m.extensions.getByType<SourceSetContainer>().getByName("main")
-        sourceDirectories.from(main.allSource.srcDirs)
-        classDirectories.from(main.output)
-    }
-    reports {
-        xml.required.set(true)
-        csv.required.set(true)
-        html.required.set(true)
-    }
 }
 
 /** Печатает покрытие строк и ветвлений по классам и модулям в консоль (из CSV-отчётов JaCoCo). */
@@ -273,7 +257,10 @@ val coverageSummary by tasks.registering {
             tlm += lm; tlc += lc; tbm += bm; tbc += bc
             out.appendLine("%-72s %10s %12s".format("MODULE ${m.path}  (lines $lc/${lc + lm}, branches $bc/${bc + bm})", pct(lc, lm), pct(bc, bm)))
             if (showClasses) {
-                rows.sortedWith(compareBy({ it.pkg }, { it.cls })).forEach { r ->
+                // Служебные классы Kotlin (лямбды "new Function1() {...}", DefaultImpls) в списке
+                // не показываем — их строки и ветвления всё равно учтены в итогах модуля.
+                rows.filterNot { "new " in it.cls || it.cls.endsWith("DefaultImpls") }
+                    .sortedWith(compareBy({ it.pkg }, { it.cls })).forEach { r ->
                     out.appendLine("    %-68s %10s %12s".format("${r.pkg}.${r.cls}".removePrefix("com.vargod."), pct(r.lc, r.lm), pct(r.bc, r.bm)))
                 }
             }
@@ -287,12 +274,12 @@ val coverageSummary by tasks.registering {
 
 /**
  * Главная точка входа ЛР1: юнит-тесты domain + business-logic + data-access,
- * затем отчёты покрытия (консоль + HTML) и Allure. Отчёты строятся и при
+ * затем покрытие (консоль; HTML — по модулям) и Allure. Отчёты строятся и при
  * падении тестов (finalizedBy), чтобы было видно, что именно упало.
  */
 val unitTests by tasks.registering {
     group = "verification"
     description = "Runs unit tests of domain, business-logic and data-access, then builds coverage and Allure reports."
     testedModules.forEach { dependsOn("$it:test") }
-    finalizedBy(coverageReport, coverageSummary, "allureAggregateReport")
+    finalizedBy(coverageSummary, "allureAggregateReport")
 }

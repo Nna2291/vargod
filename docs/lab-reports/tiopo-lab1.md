@@ -38,7 +38,7 @@
 
 ```bash
 ./gradlew unitTests                        # :domain:test :business-logic:test :data-access:test
-                                           # + coverageReport + coverageSummary + allureAggregateReport
+                                           # + coverageSummary + allureAggregateReport
 ./gradlew unitTests -PrandomOrder          # -PrandomSeed=..., -Poffline, -Pthreads=N,
                                            # -PmaxForks=N, -PforkEvery=N, -PincludeTags=..., -PexcludeTags=...
 ./gradlew coverageSummary                  # только напечатать покрытие (после тестов)
@@ -53,8 +53,7 @@
 | Отчёт | Путь |
 |---|---|
 | Allure (сводный) | `build/reports/allure-report/allureAggregateReport/index.html`, открывать через HTTP (`--serve`) |
-| Покрытие, сводное HTML | `build/reports/jacoco/coverageReport/html/index.html` |
-| Покрытие по модулям | `<модуль>/build/reports/jacoco/test/html/index.html` |
+| Покрытие (HTML) | `<модуль>/build/reports/jacoco/test/html/index.html` |
 | Стандартный отчёт Gradle | `<модуль>/build/reports/tests/test/index.html` |
 | Учёт процессов и потоков | `<модуль>/build/test-processes/test/<pid>.pid` |
 
@@ -263,18 +262,28 @@ PID и имя потока видны и в Allure, в метке `thread` (`883
 ### 14. Покрытие строк и ветвлений из командной строки
 
 JaCoCo подключён ко всем модулям; после каждой Test-задачи строится `jacocoTestReport`
-(HTML, XML, CSV). Задача `coverageSummary` печатает в консоль покрытие **строк** и **ветвлений**
-по каждому классу, модулю и итог; `coverageReport` строит сводный HTML по трём модулям.
+(HTML, XML, CSV). Покрытие модуля считается только его собственными тестами. Задача
+`coverageSummary` печатает в консоль покрытие **строк** и **ветвлений** по каждому классу,
+модулю и общий итог.
 
 ```
 ./gradlew coverageSummary          # после тестов; -PcoverageModulesOnly — только итоги по модулям
 ```
 
-Результат прогона (вставить вывод `coverageSummary`):
+Результат прогона (344 теста, все прошли):
 
-```
-TODO: вставить итоговые строки MODULE ... и TOTAL ... после запуска
-```
+| Модуль | Строки | Ветвления |
+|---|---|---|
+| `domain` | 9,8% (16/164) | 10,5% (4/38) |
+| `business-logic` | 97,8% (618/632) | 88,2% (352/399) |
+| `data-access` | 76,0% (705/928) | 72,2% (127/176) |
+| **Итого** | **77,7% (1339/1724)** | **78,8% (483/613)** |
+
+* `domain` — сущности и `ConfigLoader`; в объект тестирования ЛР1 не входит, его классы
+  используются тестами других модулей, но в покрытие модуля это не засчитывается.
+* `business-logic` — классы небольшие, и требование «≥2 теста на каждый публичный метод»
+  почти полностью их покрывает; непокрытые ветви — в основном защитные проверки.
+* `data-access` — не покрыт `DataSeeder` (заполнение БД эталонными данными, инфраструктура).
 
 ### 15. Защита от регрессии, устойчивость к рефакторингу, лёгкость поддержки
 

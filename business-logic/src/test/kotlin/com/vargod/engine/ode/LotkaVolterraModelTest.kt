@@ -1,50 +1,36 @@
 package com.vargod.engine.ode
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertThrows
+import com.vargod.engine.OdeModel
+import com.vargod.testing.BoundaryValues
+import com.vargod.testing.Classical
+import com.vargod.testing.EquivalencePartitioning
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
-class LotkaVolterraModelTest {
+@Classical
+@DisplayName("LotkaVolterraModel")
+class LotkaVolterraModelTest : OdeModelContractTest() {
 
-    private val model = LotkaVolterraModel()
-
-    @Test
-    fun `code returns LOTKA_VOLTERRA`() {
-        assertEquals("LOTKA_VOLTERRA", model.code())
-    }
-
-    @Test
-    fun `variables and parameters are stable`() {
-        assertEquals(listOf("x", "y"), model.variables())
-        assertEquals(listOf("alpha", "beta", "gamma", "delta"), model.parameters())
-    }
+    override fun createModel(): OdeModel = LotkaVolterraModel()
+    override val expectedCode = "LOTKA_VOLTERRA"
+    override val expectedVariables = listOf("x", "y")
+    override val expectedParameters = listOf("alpha", "beta", "gamma", "delta")
+    override fun validParams() = mapOf("alpha" to 1.0, "beta" to 0.1, "gamma" to 1.5, "delta" to 0.075)
+    override fun validState() = doubleArrayOf(10.0, 5.0)
 
     @Test
-    fun `derivatives compute predator-prey equations`() {
-        val state = doubleArrayOf(40.0, 9.0)
-        val params = mapOf("alpha" to 0.1, "beta" to 0.02, "gamma" to 0.3, "delta" to 0.01)
-        val d = model.derivatives(state, params, 0.0)
-        // dx/dt = 0.1*40 - 0.02*40*9 = 4 - 7.2 = -3.2
-        // dy/dt = -0.3*9 + 0.01*40*9 = -2.7 + 3.6 = 0.9
-        assertEquals(-3.2, d[0], 1e-9)
-        assertEquals(0.9, d[1], 1e-9)
-    }
+    @EquivalencePartitioning
+    fun `derivatives - non-trivial equilibrium x = gamma over delta, y = alpha over beta is stationary`() {
+        // Arrange: x* = 1.5 / 0.075 = 20, y* = 1.0 / 0.1 = 10
+        val equilibrium = doubleArrayOf(20.0, 10.0)
 
-    @Test
-    fun `wrong state size throws`() {
-        assertThrows(IllegalArgumentException::class.java) {
-            model.derivatives(
-                doubleArrayOf(1.0, 1.0, 1.0),
-                mapOf("alpha" to 1.0, "beta" to 1.0, "gamma" to 1.0, "delta" to 1.0),
-                0.0,
-            )
-        }
-    }
+        // Act
+        val d = sut.derivatives(equilibrium, validParams(), 0.0)
 
-    @Test
-    fun `missing parameter throws`() {
-        assertThrows(IllegalArgumentException::class.java) {
-            model.derivatives(doubleArrayOf(1.0, 1.0), mapOf("alpha" to 1.0, "beta" to 1.0), 0.0)
-        }
+        // Assert
+        assertThat(d).containsExactly(doubleArrayOf(0.0, 0.0), within(1e-12))
     }
 }

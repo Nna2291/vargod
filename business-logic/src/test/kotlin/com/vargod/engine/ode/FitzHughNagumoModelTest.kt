@@ -1,72 +1,50 @@
 package com.vargod.engine.ode
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertThrows
+import com.vargod.engine.OdeModel
+import com.vargod.testing.BoundaryValues
+import com.vargod.testing.Classical
+import com.vargod.testing.EquivalencePartitioning
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
-class FitzHughNagumoModelTest {
+@Classical
+@DisplayName("FitzHughNagumoModel")
+class FitzHughNagumoModelTest : OdeModelContractTest() {
 
-    private val model = FitzHughNagumoModel()
-
-    @Test
-    fun `code returns FITZHUGH_NAGUMO`() {
-        assertEquals("FITZHUGH_NAGUMO", model.code())
-    }
-
-    @Test
-    fun `variables and parameters are stable`() {
-        assertEquals(listOf("V", "w"), model.variables())
-        assertEquals(listOf("a", "b", "tau", "Iext"), model.parameters())
-    }
+    override fun createModel(): OdeModel = FitzHughNagumoModel()
+    override val expectedCode = "FITZHUGH_NAGUMO"
+    override val expectedVariables = listOf("V", "w")
+    override val expectedParameters = listOf("a", "b", "tau", "Iext")
+    override fun validParams() = mapOf("a" to 0.7, "b" to 0.8, "tau" to 12.5, "Iext" to 0.5)
+    override fun validState() = doubleArrayOf(0.0, 0.0)
 
     @Test
-    fun `derivatives compute FHN equations deterministically`() {
-        val state = doubleArrayOf(0.0, 0.0)
-        val params = mapOf("a" to 0.7, "b" to 0.8, "tau" to 12.5, "Iext" to 0.5)
-        val d = model.derivatives(state, params, 0.0)
-        // dV = 0 - 0 - 0 + 0.5 = 0.5
-        // dw = (0 + 0.7 - 0.8*0)/12.5 = 0.7/12.5 = 0.056
-        assertEquals(0.5, d[0], 1e-12)
-        assertEquals(0.7 / 12.5, d[1], 1e-12)
-    }
-
-    @Test
-    fun `nontrivial state gives expected derivatives`() {
+    @EquivalencePartitioning
+    fun `derivatives - known point matches FitzHugh-Nagumo equations`() {
+        // Arrange
         val state = doubleArrayOf(1.5, 0.3)
-        val params = mapOf("a" to 0.7, "b" to 0.8, "tau" to 12.5, "Iext" to 0.0)
-        val d = model.derivatives(state, params, 0.0)
-        // dV = 1.5 - 1.5^3/3 - 0.3 + 0 = 1.5 - 1.125 - 0.3 = 0.075
-        // dw = (1.5 + 0.7 - 0.8*0.3)/12.5 = (1.5 + 0.7 - 0.24)/12.5 = 1.96/12.5 = 0.1568
-        assertEquals(0.075, d[0], 1e-12)
-        assertEquals(1.96 / 12.5, d[1], 1e-12)
+        val params = validParams() + ("Iext" to 0.0)
+
+        // Act
+        val d = sut.derivatives(state, params, 0.0)
+
+        // Assert: dV = 1.5 - 1.5^3/3 - 0.3 = 0.075; dw = (1.5 + 0.7 - 0.8*0.3) / 12.5 = 0.1568
+        assertThat(d).containsExactly(doubleArrayOf(0.075, 0.1568), within(1e-12))
     }
 
     @Test
-    fun `non-positive tau is rejected`() {
-        assertThrows(IllegalArgumentException::class.java) {
-            model.derivatives(
-                doubleArrayOf(0.0, 0.0),
-                mapOf("a" to 0.7, "b" to 0.8, "tau" to 0.0, "Iext" to 0.0),
-                0.0,
-            )
-        }
-    }
+    @BoundaryValues
+    fun `derivatives - zero time constant tau is rejected`() {
+        // Arrange
+        val params = validParams() + ("tau" to 0.0)
 
-    @Test
-    fun `wrong state size throws`() {
-        assertThrows(IllegalArgumentException::class.java) {
-            model.derivatives(
-                doubleArrayOf(0.0),
-                mapOf("a" to 0.7, "b" to 0.8, "tau" to 1.0, "Iext" to 0.0),
-                0.0,
-            )
-        }
-    }
+        // Act
+        val error = assertThrows<IllegalArgumentException> { sut.derivatives(validState(), params, 0.0) }
 
-    @Test
-    fun `missing parameter throws`() {
-        assertThrows(IllegalArgumentException::class.java) {
-            model.derivatives(doubleArrayOf(0.0, 0.0), mapOf("a" to 0.7), 0.0)
-        }
+        // Assert
+        assertThat(error.message).isEqualTo("tau must be positive")
     }
 }

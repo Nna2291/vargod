@@ -1,57 +1,49 @@
 package com.vargod.engine.ode
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertThrows
+import com.vargod.engine.OdeModel
+import com.vargod.testing.BoundaryValues
+import com.vargod.testing.Classical
+import com.vargod.testing.EquivalencePartitioning
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
-class LogisticGrowthModelTest {
+@Classical
+@DisplayName("LogisticGrowthModel")
+class LogisticGrowthModelTest : OdeModelContractTest() {
 
-    private val model = LogisticGrowthModel()
+    override fun createModel(): OdeModel = LogisticGrowthModel()
+    override val expectedCode = "LOGISTIC"
+    override val expectedVariables = listOf("P")
+    override val expectedParameters = listOf("r", "K")
+    override fun validParams() = mapOf("r" to 0.5, "K" to 100.0)
+    override fun validState() = doubleArrayOf(10.0)
 
     @Test
-    fun `code returns LOGISTIC`() {
-        assertEquals("LOGISTIC", model.code())
+    @BoundaryValues
+    fun `derivatives - population exactly at carrying capacity does not grow`() {
+        // Arrange
+        val atCapacity = doubleArrayOf(100.0)
+
+        // Act
+        val d = sut.derivatives(atCapacity, validParams(), 0.0)
+
+        // Assert
+        assertThat(d[0]).isEqualTo(0.0)
     }
 
     @Test
-    fun `variables and parameters are stable`() {
-        assertEquals(listOf("P"), model.variables())
-        assertEquals(listOf("r", "K"), model.parameters())
-    }
+    @BoundaryValues
+    fun `derivatives - zero carrying capacity is rejected`() {
+        // Arrange
+        val params = validParams() + ("K" to 0.0)
 
-    @Test
-    fun `derivative follows logistic equation`() {
-        val state = doubleArrayOf(50.0)
-        val params = mapOf("r" to 0.4, "K" to 100.0)
-        val d = model.derivatives(state, params, 0.0)
-        // dP/dt = 0.4 * 50 * (1 - 50/100) = 0.4 * 50 * 0.5 = 10.0
-        assertEquals(10.0, d[0], 1e-9)
-    }
+        // Act
+        val error = assertThrows<IllegalArgumentException> { sut.derivatives(validState(), params, 0.0) }
 
-    @Test
-    fun `derivative at carrying capacity is zero`() {
-        val d = model.derivatives(doubleArrayOf(100.0), mapOf("r" to 0.4, "K" to 100.0), 0.0)
-        assertEquals(0.0, d[0], 1e-12)
-    }
-
-    @Test
-    fun `wrong state size throws`() {
-        assertThrows(IllegalArgumentException::class.java) {
-            model.derivatives(doubleArrayOf(1.0, 1.0), mapOf("r" to 1.0, "K" to 1.0), 0.0)
-        }
-    }
-
-    @Test
-    fun `non-positive K throws`() {
-        assertThrows(IllegalArgumentException::class.java) {
-            model.derivatives(doubleArrayOf(1.0), mapOf("r" to 1.0, "K" to 0.0), 0.0)
-        }
-    }
-
-    @Test
-    fun `missing parameter throws`() {
-        assertThrows(IllegalArgumentException::class.java) {
-            model.derivatives(doubleArrayOf(1.0), mapOf("r" to 1.0), 0.0)
-        }
+        // Assert
+        assertThat(error.message).contains("must be positive")
     }
 }

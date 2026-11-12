@@ -26,7 +26,7 @@ jobs:
       - name: Compile all modules
         run: ./gradlew --no-daemon assemble
 
-      - name: Run unit + integration tests (Testcontainers подтянет Postgres сам)
+      - name: Run unit tests (PostgreSQL для тестов БД поднимается embedded, без Docker)
         run: ./gradlew --no-daemon test
 
       - name: Upload test reports on failure

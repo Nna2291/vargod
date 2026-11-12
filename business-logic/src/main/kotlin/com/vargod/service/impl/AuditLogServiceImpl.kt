@@ -8,6 +8,7 @@ import com.vargod.domain.repository.AuditLogFilter
 import com.vargod.domain.repository.AuditLogRepository
 import com.vargod.service.AuditLogService
 import org.slf4j.LoggerFactory
+import java.time.Clock
 import java.time.Instant
 import java.util.UUID
 
@@ -25,6 +26,8 @@ import java.util.UUID
 class AuditLogServiceImpl(
     private val auditLogRepository: AuditLogRepository,
     private val mapper: ObjectMapper = jacksonObjectMapper(),
+    /** Источник времени для createdAt записи журнала (внедряется ради детерминированных тестов). */
+    private val clock: Clock = Clock.systemUTC(),
 ) : AuditLogService {
 
     private val log = LoggerFactory.getLogger(AuditLogServiceImpl::class.java)
@@ -46,7 +49,7 @@ class AuditLogServiceImpl(
             targetType = targetType,
             targetId = targetId,
             payload = payloadJson,
-            createdAt = Instant.now(),
+            createdAt = Instant.now(clock),
         )
         return auditLogRepository.save(entry)
     }

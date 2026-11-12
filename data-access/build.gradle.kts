@@ -19,6 +19,9 @@ dependencies {
     runtimeOnly("org.flywaydb:flyway-database-postgresql:10.21.0")
 
     testImplementation(testFixtures(project(":domain")))
-    testImplementation("org.testcontainers:postgresql:1.20.4")
-    testImplementation("org.testcontainers:junit-jupiter:1.20.4")
+    // Классические (без mock) тесты репозиториев идут на настоящем PostgreSQL 16,
+    // который поднимается embedded-процессом: бинарники PostgreSQL приходят как
+    // обычная Maven-зависимость, Docker не нужен, после первой загрузки работает офлайн.
+    testImplementation("io.zonky.test:embedded-postgres:2.1.0")
+    testImplementation(enforcedPlatform("io.zonky.test.postgres:embedded-postgres-binaries-bom:16.4.0"))
 }

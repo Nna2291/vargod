@@ -3,153 +3,172 @@ package com.vargod.engine.validation
 import com.vargod.domain.ValidationStatus
 import com.vargod.engine.ConstraintRule
 import com.vargod.engine.ConstraintRuleRegistry
-import com.vargod.testfixtures.Fixtures
+import com.vargod.support.RealEngines
+import com.vargod.testing.BoundaryValues
+import com.vargod.testing.Classical
+import com.vargod.testing.EquivalencePartitioning
+import com.vargod.testing.ErrorGuessing
+import com.vargod.testing.London
+import com.vargod.testing.builders.aValidator
+import com.vargod.testing.mothers.ValidatorMother
 import io.mockk.every
-import io.mockk.mockk
-import org.junit.jupiter.api.Assertions.assertEquals
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
+import io.mockk.verify
+import io.qameta.allure.Epic
+import io.qameta.allure.Feature
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 
-class RuleValidationEngineTest {
+@Classical
+@Epic("Business logic")
+@Feature("Validation engine")
+@DisplayName("RuleValidationEngine — classical style (real rules)")
+class RuleValidationEngineClassicalTest {
 
-    private val ruleRegistry = mockk<ConstraintRuleRegistry>()
-    private val engine = RuleValidationEngine(ruleRegistry)
+    private lateinit var sut: RuleValidationEngine
 
     @BeforeEach
-    fun setUpRangeRule() {
-        // P2: RANGE — теперь обычное правило в реестре. В тестах используем
-        // реальную RangeRule для проверки runtime-поведения; CONSTRAINT-правила
-        // по-прежнему мокаем индивидуально в каждом тесте.
-        every { ruleRegistry.getByType("RANGE") } returns RangeRule()
+    fun setUp() {
+        sut = RealEngines.validationEngine()
     }
 
     @Test
-    fun `passes value inside inclusive range`() {
-        val v = Fixtures.rangeValidator("beta", min = 0.0, max = 1.0)
-        val results = engine.validate(mapOf("beta" to 0.5), listOf(v))
-        assertEquals(1, results.size)
-        assertEquals(ValidationStatus.PASS, results[0].status)
-        assertEquals(v.id, results[0].validatorId)
-    }
-
-    @Test
-    fun `passes value on inclusive boundary`() {
-        val v = Fixtures.rangeValidator("beta", min = 0.0, max = 1.0)
-        assertEquals(ValidationStatus.PASS, engine.validate(mapOf("beta" to 0.0), listOf(v)).single().status)
-        assertEquals(ValidationStatus.PASS, engine.validate(mapOf("beta" to 1.0), listOf(v)).single().status)
-    }
-
-    @Test
-    fun `fails value on exclusive boundary`() {
-        val v = Fixtures.rangeValidator("beta", min = 0.0, max = 1.0, minExclusive = true, maxExclusive = true)
-        assertEquals(ValidationStatus.FAIL, engine.validate(mapOf("beta" to 0.0), listOf(v)).single().status)
-        assertEquals(ValidationStatus.FAIL, engine.validate(mapOf("beta" to 1.0), listOf(v)).single().status)
-    }
-
-    @Test
-    fun `fails value below min`() {
-        val v = Fixtures.rangeValidator("beta", min = 0.0)
-        val r = engine.validate(mapOf("beta" to -0.1), listOf(v)).single()
-        assertEquals(ValidationStatus.FAIL, r.status)
-        assert(r.message!!.contains("min"))
-    }
-
-    @Test
-    fun `fails value above max`() {
-        val v = Fixtures.rangeValidator("beta", max = 1.0)
-        val r = engine.validate(mapOf("beta" to 1.5), listOf(v)).single()
-        assertEquals(ValidationStatus.FAIL, r.status)
-        assert(r.message!!.contains("max"))
-    }
-
-    @Test
-    fun `fails when range value is missing`() {
-        val v = Fixtures.rangeValidator("beta", min = 0.0)
-        val r = engine.validate(emptyMap(), listOf(v)).single()
-        assertEquals(ValidationStatus.FAIL, r.status)
-        assert(r.message!!.contains("missing"))
-    }
-
-    @Test
-    fun `fails when range value is not numeric`() {
-        val v = Fixtures.rangeValidator("beta", min = 0.0)
-        val r = engine.validate(mapOf("beta" to "oops"), listOf(v)).single()
-        assertEquals(ValidationStatus.FAIL, r.status)
-    }
-
-    @Test
-    fun `fails when range validator lacks min and max`() {
-        val v = Fixtures.rangeValidator("beta")
-        val r = engine.validate(mapOf("beta" to 1.0), listOf(v)).single()
-        assertEquals(ValidationStatus.FAIL, r.status)
-    }
-
-    @Test
-    fun `constraint passes when rule returns true`() {
-        val rule = mockk<ConstraintRule>()
-        every { rule.check(any(), any()) } returns true
-        every { ruleRegistry.getByType("CUSTOM") } returns rule
-        val v = Fixtures.constraintValidator("CUSTOM")
-        val r = engine.validate(mapOf("x" to 1.0), listOf(v)).single()
-        assertEquals(ValidationStatus.PASS, r.status)
-    }
-
-    @Test
-    fun `constraint fails when rule returns false`() {
-        val rule = mockk<ConstraintRule>()
-        every { rule.check(any(), any()) } returns false
-        every { ruleRegistry.getByType("CUSTOM") } returns rule
-        val v = Fixtures.constraintValidator("CUSTOM")
-        val r = engine.validate(mapOf("x" to 1.0), listOf(v)).single()
-        assertEquals(ValidationStatus.FAIL, r.status)
-        assert(r.message!!.contains("CUSTOM"))
-    }
-
-    @Test
-    fun `unknown constraint type yields FAIL`() {
-        every { ruleRegistry.getByType("UNKNOWN") } throws IllegalArgumentException("Unknown rule UNKNOWN")
-        val v = Fixtures.constraintValidator("UNKNOWN")
-        val r = engine.validate(emptyMap(), listOf(v)).single()
-        assertEquals(ValidationStatus.FAIL, r.status)
-        assert(r.message!!.contains("Unknown"))
-    }
-
-    @Test
-    fun `constraint without type yields FAIL`() {
-        val v = com.vargod.domain.Validator(
-            id = java.util.UUID.randomUUID(),
-            name = "broken",
-            checkType = com.vargod.domain.ValidatorType.CONSTRAINT,
-            targetKind = com.vargod.domain.ValidatorTargetKind.PARAMETER,
-            targetField = "*",
-            rules = emptyMap(),
+    @EquivalencePartitioning
+    fun `validate - all satisfied validators give one PASS per validator`() {
+        // Arrange
+        val validators = listOf(
+            ValidatorMother.positive("N"),
+            ValidatorMother.sirPopulationConservation(),
+            ValidatorMother.ascending("t0", "t1"),
         )
-        val r = engine.validate(emptyMap(), listOf(v)).single()
-        assertEquals(ValidationStatus.FAIL, r.status)
-        assert(r.message!!.contains("type"))
+        val values = mapOf<String, Any>("S" to 999.0, "I" to 1.0, "R" to 0.0, "N" to 1000.0, "t0" to 0.0, "t1" to 1.0)
+
+        // Act
+        val results = sut.validate(values, validators)
+
+        // Assert
+        assertThat(results).hasSize(3).allMatch { it.status == ValidationStatus.PASS && it.message == null }
+        assertThat(results.map { it.validatorId }).containsExactlyElementsOf(validators.map { it.id })
     }
 
     @Test
-    fun `constraint check throwing IllegalArgumentException yields FAIL`() {
-        val rule = mockk<ConstraintRule>()
-        every { rule.check(any(), any()) } throws IllegalArgumentException("missing field")
-        every { ruleRegistry.getByType("CUSTOM") } returns rule
-        val v = Fixtures.constraintValidator("CUSTOM")
-        val r = engine.validate(emptyMap(), listOf(v)).single()
-        assertEquals(ValidationStatus.FAIL, r.status)
-        assert(r.message!!.contains("missing field"))
+    @EquivalencePartitioning
+    fun `validate - violated RANGE gives FAIL with message from the rule`() {
+        // Arrange
+        val validator = ValidatorMother.fraction("gamma")
+
+        // Act
+        val results = sut.validate(mapOf("gamma" to 1.5), listOf(validator))
+
+        // Assert
+        assertThat(results).singleElement().satisfies({
+            assertThat(it.status).isEqualTo(ValidationStatus.FAIL)
+            assertThat(it.message).isEqualTo("Field 'gamma' = 1.5 violates max=1.0 (exclusive=false)")
+        })
     }
 
     @Test
-    fun `mixed validators produce one result per validator`() {
-        val rule = mockk<ConstraintRule>()
-        every { rule.check(any(), any()) } returns true
-        every { ruleRegistry.getByType("CUSTOM") } returns rule
-        val v1 = Fixtures.rangeValidator("beta", min = 0.0, max = 1.0)
-        val v2 = Fixtures.constraintValidator("CUSTOM")
-        val results = engine.validate(mapOf("beta" to 0.5), listOf(v1, v2))
-        assertEquals(2, results.size)
-        assertEquals(v1.id, results[0].validatorId)
-        assertEquals(v2.id, results[1].validatorId)
+    @BoundaryValues
+    fun `validate - no validators gives no results`() {
+        // Arrange
+        val values = mapOf<String, Any>("P" to -1.0)
+
+        // Act
+        val results = sut.validate(values, emptyList())
+
+        // Assert
+        assertThat(results).isEmpty()
     }
+
+    @Test
+    @ErrorGuessing
+    fun `validate - unknown rule type gives FAIL instead of exception`() {
+        // Arrange
+        val validator = ValidatorMother.constraintOfUnknownType()
+
+        // Act
+        val results = sut.validate(emptyMap(), listOf(validator))
+
+        // Assert
+        assertThat(results.single().message).isEqualTo("Unknown constraint rule type: NO_SUCH_RULE")
+    }
+
+}
+
+/**
+ * Тот же движок в лондонском стиле: реестр и правило — mock'и. Проверяется
+ * не результат вычислений, а КОНТРАКТ взаимодействия: какой тип правила
+ * запрашивается и какие параметры передаются в ConstraintRule.check.
+ */
+@London
+@Epic("Business logic")
+@Feature("Validation engine")
+@DisplayName("RuleValidationEngine — London style (MockK)")
+@ExtendWith(MockKExtension::class)
+class RuleValidationEngineLondonTest {
+
+    @MockK private lateinit var registry: ConstraintRuleRegistry
+    @MockK private lateinit var rule: ConstraintRule
+
+    private lateinit var sut: RuleValidationEngine
+
+    @BeforeEach
+    fun setUp() {
+        sut = RuleValidationEngine(registry)
+    }
+
+    @Test
+    @EquivalencePartitioning
+    fun `validate - RANGE validator gets targetField injected as field parameter`() {
+        // Arrange
+        val validator = aValidator().range("beta", min = 0.0).build()
+        val values = mapOf<String, Any>("beta" to 0.3)
+        every { registry.getByType("RANGE") } returns rule
+        every { rule.check(values, mapOf("min" to 0.0, "field" to "beta")) } returns true
+
+        // Act
+        val results = sut.validate(values, listOf(validator))
+
+        // Assert
+        assertThat(results.single().status).isEqualTo(ValidationStatus.PASS)
+        verify(exactly = 1) { rule.check(values, mapOf("min" to 0.0, "field" to "beta")) }
+    }
+
+    @Test
+    @EquivalencePartitioning
+    fun `validate - CONSTRAINT rules are passed to the rule unchanged`() {
+        // Arrange
+        val validator = ValidatorMother.ascending("a", "b")
+        val values = mapOf<String, Any>("a" to 2.0, "b" to 1.0)
+        every { registry.getByType("ORDERED") } returns rule
+        every { rule.check(values, validator.rules) } returns false
+
+        // Act
+        val results = sut.validate(values, listOf(validator))
+
+        // Assert
+        assertThat(results.single().message).isEqualTo("Constraint 'ORDERED' violated")
+        verify(exactly = 1) { rule.check(values, validator.rules) }
+    }
+
+    @Test
+    @ErrorGuessing
+    fun `validate - IllegalArgumentException from rule becomes FAIL with its message`() {
+        // Arrange
+        val validator = ValidatorMother.ascending("a", "b")
+        every { registry.getByType(any()) } returns rule
+        every { rule.check(any(), any()) } throws IllegalArgumentException("Value 'b' must be a number, got null")
+
+        // Act
+        val results = sut.validate(mapOf("a" to 1.0), listOf(validator))
+
+        // Assert
+        assertThat(results.single().status).isEqualTo(ValidationStatus.FAIL)
+        assertThat(results.single().message).isEqualTo("Value 'b' must be a number, got null")
+    }
+
 }

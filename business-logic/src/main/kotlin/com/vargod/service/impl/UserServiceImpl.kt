@@ -7,6 +7,7 @@ import com.vargod.domain.Role
 import com.vargod.domain.User
 import com.vargod.domain.repository.UserRepository
 import com.vargod.service.UserService
+import java.time.Clock
 import java.time.Instant
 import java.util.UUID
 
@@ -18,6 +19,8 @@ import java.util.UUID
 class UserServiceImpl(
     private val userRepository: UserRepository,
     private val bcryptCost: Int = 10,
+    /** Источник времени для createdAt (внедряется ради детерминированных тестов). */
+    private val clock: Clock = Clock.systemUTC(),
 ) : UserService {
 
     override fun getById(id: UUID): User =
@@ -40,7 +43,7 @@ class UserServiceImpl(
             email = email.trim(),
             passwordHash = hash,
             role = role,
-            createdAt = Instant.now(),
+            createdAt = Instant.now(clock),
         )
         return userRepository.save(user)
     }

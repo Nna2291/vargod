@@ -1,125 +1,155 @@
 package com.vargod.engine.ode
 
-import com.vargod.domain.ParameterSet
 import com.vargod.engine.ModelRegistry
 import com.vargod.engine.OdeModel
-import com.vargod.testfixtures.Fixtures
+import com.vargod.support.RealEngines
+import com.vargod.testing.BoundaryValues
+import com.vargod.testing.Classical
+import com.vargod.testing.EquivalencePartitioning
+import com.vargod.testing.ErrorGuessing
+import com.vargod.testing.London
+import com.vargod.testing.builders.aModelTemplate
+import com.vargod.testing.builders.aParameterSet
+import com.vargod.testing.mothers.ModelTemplateMother
+import com.vargod.testing.mothers.ParameterSetMother
 import io.mockk.every
-import io.mockk.mockk
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Assertions.assertTrue
+import io.qameta.allure.Epic
+import io.qameta.allure.Feature
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import java.util.UUID
-import kotlin.math.abs
+import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.ExtendWith
 import kotlin.math.exp
 
-class OdeSimulationEngineTest {
+@Classical
+@Epic("Business logic")
+@Feature("Simulation engine")
+@DisplayName("OdeSimulationEngine — classical style (real ODE models)")
+class OdeSimulationEngineClassicalTest {
+
+    private lateinit var sut: OdeSimulationEngine
+
+    @BeforeEach
+    fun setUp() {
+        sut = RealEngines.simulationEngine()
+    }
 
     @Test
-    fun `solve produces time series for logistic growth matching analytical solution`() {
-        val registry = MapModelRegistry(listOf(LogisticGrowthModel()))
-        val engine = OdeSimulationEngine(registry)
-        val model = Fixtures.model(code = "LOGISTIC")
-        val p0 = 10.0
-        val r = 0.4
-        val k = 100.0
-        val params = ParameterSet(
-            id = UUID.randomUUID(),
-            values = mapOf("P" to p0, "r" to r, "K" to k),
-            tStart = 0.0,
-            tEnd = 10.0,
-            step = 1.0,
-        )
-        val result = engine.solve(model, params)
+    @EquivalencePartitioning
+    fun `solve - logistic growth follows the analytical solution`() {
+        // Arrange
+        val params = ParameterSetMother.logistic() // P0 = 10, r = 0.5, K = 100, t ∈ [0; 10], шаг 1
+        val analytical = { t: Double -> 100.0 / (1.0 + 9.0 * exp(-0.5 * t)) }
 
-        // Analytical: P(t) = K / (1 + (K/P0 - 1) * exp(-r*t))
-        val analytical: (Double) -> Double = { t -> k / (1.0 + (k / p0 - 1.0) * exp(-r * t)) }
-        assertTrue(result.timePoints.size >= 10) { "expected at least 10 sample points, got ${result.timePoints.size}" }
-        val pSeries = result.variables.getValue("P")
+        // Act
+        val result = sut.solve(ModelTemplateMother.logistic(), params)
+
+        // Assert
+        assertThat(result.timePoints).hasSize(11)
         result.timePoints.forEachIndexed { i, t ->
-            val expected = analytical(t)
-            val actual = pSeries[i]
-            assertTrue(abs(actual - expected) / expected < 1e-3) {
-                "deviation at t=$t too large: expected=$expected, actual=$actual"
-            }
+            assertThat(result.variables.getValue("P")[i]).isCloseTo(analytical(t), within(1e-6))
         }
     }
 
     @Test
-    fun `solve calls registry with model code and uses returned OdeModel`() {
-        val registry = mockk<ModelRegistry>()
-        val fakeOde = object : OdeModel {
-            override fun code() = "CONST"
-            override fun variables() = listOf("x")
-            override fun parameters() = emptyList<String>()
-            override fun derivatives(state: DoubleArray, params: Map<String, Double>, t: Double) = doubleArrayOf(1.0)
-        }
-        every { registry.getByCode("CONST") } returns fakeOde
-        val engine = OdeSimulationEngine(registry)
-        val model = Fixtures.model(code = "CONST")
-        val params = ParameterSet(
-            id = UUID.randomUUID(),
-            values = mapOf("x" to 0.0),
-            tStart = 0.0,
-            tEnd = 5.0,
-            step = 1.0,
-        )
+    @BoundaryValues
+    fun `solve - step equal to the whole horizon gives exactly two samples`() {
+        // Arrange
+        val params = aParameterSet().withTimeRange(0.0, 1.0).withStep(1.0).build()
 
-        val result = engine.solve(model, params)
+        // Act
+        val result = sut.solve(ModelTemplateMother.logistic(), params)
 
-        verify(exactly = 1) { registry.getByCode("CONST") }
-        val xSeries = result.variables.getValue("x")
-        assertEquals(result.timePoints.size, xSeries.size)
-        // dx/dt = 1, x(0)=0 -> x(t) = t. Verify last sample.
-        val tLast = result.timePoints.last()
-        val xLast = xSeries.last()
-        assertTrue(abs(xLast - tLast) < 1e-6) { "expected x(t)=t, got x=$xLast at t=$tLast" }
+        // Assert
+        assertThat(result.timePoints).containsExactly(0.0, 1.0)
     }
 
     @Test
-    fun `solve rejects tEnd not after tStart`() {
-        val engine = OdeSimulationEngine(MapModelRegistry(listOf(LogisticGrowthModel())))
-        val params = ParameterSet(
-            UUID.randomUUID(),
-            mapOf("P" to 1.0, "r" to 1.0, "K" to 1.0),
-            tStart = 1.0,
-            tEnd = 1.0,
-            step = 0.1,
-        )
-        assertThrows(IllegalArgumentException::class.java) {
-            engine.solve(Fixtures.model(code = "LOGISTIC"), params)
-        }
+    @BoundaryValues
+    fun `solve - zero-length horizon is rejected`() {
+        // Arrange
+        val params = aParameterSet().withTimeRange(3.0, 3.0).build()
+
+        // Act
+        val error = assertThrows<IllegalArgumentException> { sut.solve(ModelTemplateMother.logistic(), params) }
+
+        // Assert
+        assertThat(error.message).startsWith("tEnd")
     }
 
     @Test
-    fun `solve rejects non-positive step`() {
-        val engine = OdeSimulationEngine(MapModelRegistry(listOf(LogisticGrowthModel())))
-        val params = ParameterSet(
-            UUID.randomUUID(),
-            mapOf("P" to 1.0, "r" to 1.0, "K" to 1.0),
-            tStart = 0.0,
-            tEnd = 1.0,
-            step = 0.0,
-        )
-        assertThrows(IllegalArgumentException::class.java) {
-            engine.solve(Fixtures.model(code = "LOGISTIC"), params)
-        }
+    @ErrorGuessing
+    fun `solve - missing initial value of a state variable is reported`() {
+        // Arrange
+        val params = aParameterSet().withValues("r" to 0.5, "K" to 100.0).build()
+
+        // Act
+        val error = assertThrows<IllegalArgumentException> { sut.solve(ModelTemplateMother.logistic(), params) }
+
+        // Assert
+        assertThat(error.message).isEqualTo("Missing initial value for variable 'P'")
+    }
+}
+
+/**
+ * Лондонский вариант: реестр и ОДУ-модель — mock'и. Так проверяется то, что
+ * классическим тестом не увидеть: подсказки решателя из шаблона действительно
+ * доходят до интегратора (меньший maxStep → больше вычислений производных).
+ */
+@London
+@Epic("Business logic")
+@Feature("Simulation engine")
+@DisplayName("OdeSimulationEngine — London style (MockK)")
+@ExtendWith(MockKExtension::class)
+class OdeSimulationEngineLondonTest {
+
+    @MockK private lateinit var registry: ModelRegistry
+    @MockK private lateinit var ode: OdeModel
+
+    private lateinit var sut: OdeSimulationEngine
+
+    @BeforeEach
+    fun setUp() {
+        sut = OdeSimulationEngine(registry, maxStep = 1.0)
+        every { registry.getByCode("CONST") } returns ode
+        every { ode.code() } returns "CONST"
+        every { ode.variables() } returns listOf("x")
+        every { ode.derivatives(any(), any(), any()) } returns doubleArrayOf(1.0)
     }
 
     @Test
-    fun `solve rejects missing initial value for variable`() {
-        val engine = OdeSimulationEngine(MapModelRegistry(listOf(LogisticGrowthModel())))
-        val params = ParameterSet(
-            UUID.randomUUID(),
-            mapOf("r" to 0.1, "K" to 100.0), // missing P
-            tStart = 0.0,
-            tEnd = 1.0,
-            step = 0.1,
-        )
-        assertThrows(IllegalArgumentException::class.java) {
-            engine.solve(Fixtures.model(code = "LOGISTIC"), params)
-        }
+    @EquivalencePartitioning
+    fun `solve - recommended max step from template overrides engine default`() {
+        // Arrange
+        val template = aModelTemplate().withCode("CONST").withSolverHints(maxStep = 0.01, relTol = null, absTol = null).build()
+        val params = aParameterSet().withValues("x" to 0.0).withTimeRange(0.0, 1.0).withStep(0.5).build()
+
+        // Act
+        val result = sut.solve(template, params)
+
+        // Assert: dx/dt = 1 => x(1) = 1; при maxStep = 0.01 нужно не меньше 100 шагов
+        assertThat(result.variables.getValue("x").last()).isCloseTo(1.0, within(1e-9))
+        verify(atLeast = 100) { ode.derivatives(any(), any(), any()) }
+    }
+
+    @Test
+    @ErrorGuessing
+    fun `solve - model returning wrong number of derivatives is reported`() {
+        // Arrange
+        val template = aModelTemplate().withCode("CONST").build()
+        val params = aParameterSet().withValues("x" to 0.0).build()
+        every { ode.derivatives(any(), any(), any()) } returns doubleArrayOf(1.0, 2.0)
+
+        // Act
+        val error = assertThrows<IllegalArgumentException> { sut.solve(template, params) }
+
+        // Assert
+        assertThat(error.message).contains("produced 2 derivatives but expected 1")
     }
 }

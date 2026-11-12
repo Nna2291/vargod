@@ -16,6 +16,7 @@ import com.vargod.engine.SimulationEngine
 import com.vargod.engine.ValidationEngine
 import com.vargod.service.ExperimentService
 import org.slf4j.LoggerFactory
+import java.time.Clock
 import java.time.Instant
 import java.util.UUID
 
@@ -24,6 +25,11 @@ class ExperimentServiceImpl(
     private val modelRepository: ModelTemplateRepository,
     private val simulationEngine: SimulationEngine,
     private val validationEngine: ValidationEngine,
+    /**
+     * Источник текущего времени для createdAt. Внедряется ради детерминированных
+     * тестов (ТиОПО ЛР1): с Instant.now() момент создания нельзя проверить точно.
+     */
+    private val clock: Clock = Clock.systemUTC(),
 ) : ExperimentService {
 
     private val log = LoggerFactory.getLogger(ExperimentServiceImpl::class.java)
@@ -59,7 +65,7 @@ class ExperimentServiceImpl(
             modelTemplateId = model.id,
             parameterSet = parameterSet,
             result = null,
-            createdAt = Instant.now(),
+            createdAt = Instant.now(clock),
             // Snapshot валидаторов на момент создания (P2). Если admin позже
             // отредактирует или удалит валидатор — этот эксперимент сохранит
             // тот набор правил, которому соответствуют его параметры.

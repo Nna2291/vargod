@@ -125,10 +125,13 @@ VARGOD_ADMIN_PASSWORD=change-me
 ### Запуск тестов
 
 ```bash
-./gradlew :domain:test :business-logic:test :data-access:test :api:test
+./scripts/run-tests.sh          # юнит-тесты + покрытие (строки/ветвления) + отчёт Allure
+./gradlew unitTests             # то же самое напрямую через Gradle
 ```
 
-Доменные и сервисные тесты — JUnit 5 + Mockk. Репозиторные тесты используют Testcontainers (нужен Docker).
+JUnit 5 + MockK + AssertJ. Тесты репозиториев идут на embedded PostgreSQL 16 (Docker не нужен).
+Режимы (случайный порядок, офлайн, число процессов/потоков, фильтр по тегам) и описание
+тестов — [docs/lab-reports/tiopo-lab1.md](docs/lab-reports/tiopo-lab1.md).
 
 ### Frontend в dev-режиме
 

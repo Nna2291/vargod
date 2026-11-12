@@ -1,82 +1,164 @@
 package com.vargod.engine.validation
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Assertions.assertTrue
+import com.vargod.testing.BoundaryValues
+import com.vargod.testing.Classical
+import com.vargod.testing.EquivalencePartitioning
+import com.vargod.testing.ErrorGuessing
+import io.qameta.allure.Epic
+import io.qameta.allure.Feature
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 
+@Classical
+@Epic("Business logic")
+@Feature("Validation rules")
+@DisplayName("OrderedRule")
 class OrderedRuleTest {
 
-    private val rule = OrderedRule()
+    private lateinit var sut: OrderedRule
 
-    @Test
-    fun `type is ORDERED`() {
-        assertEquals("ORDERED", rule.type())
+    @BeforeEach
+    fun setUp() {
+        sut = OrderedRule()
+    }
+
+    private fun params(direction: String?, vararg fields: String): Map<String, Any> = buildMap {
+        put("fields", fields.toList())
+        direction?.let { put("direction", it) }
     }
 
     @Test
-    fun `ascending strict passes`() {
-        val values = mapOf("t1" to 0.0, "t2" to 1.0, "t3" to 2.5)
-        val params: Map<String, Any> = mapOf(
-            "fields" to listOf("t1", "t2", "t3"),
-            "direction" to "ASCENDING",
+    @EquivalencePartitioning
+    fun `type - is ORDERED`() {
+        // Arrange
+        val expected = "ORDERED"
+
+        // Act
+        val type = sut.type()
+
+        // Assert
+        assertThat(type).isEqualTo(expected)
+    }
+
+    @Test
+    @ErrorGuessing
+    fun `type - differs from every other production rule`() {
+        // Arrange
+        val others = listOf(RangeRule(), SumEqualsFieldRule(), SumEqualsValueRule()).map { it.type() }
+
+        // Act
+        val type = sut.type()
+
+        // Assert
+        assertThat(others).doesNotContain(type)
+    }
+
+    @Test
+    @EquivalencePartitioning
+    fun `paramsSchema - requires fields and direction with fixed allowed values`() {
+        // Arrange
+        val expectedAllowed = listOf("ASCENDING", "DESCENDING")
+
+        // Act
+        val schema = sut.paramsSchema()
+
+        // Assert
+        assertThat(schema.fields.map { it.name }).containsExactly("fields", "direction")
+        assertThat(schema.fields).allMatch { it.required }
+        assertThat(schema.fields.single { it.name == "direction" }.allowedValues).isEqualTo(expectedAllowed)
+    }
+
+    @Test
+    @ErrorGuessing
+    fun `paramsSchema - reports both missing required parameters`() {
+        // Arrange
+        val schema = sut.paramsSchema()
+
+        // Act
+        val errors = schema.validate(emptyMap())
+
+        // Assert
+        assertThat(errors).containsExactly(
+            "Missing required parameter 'fields'",
+            "Missing required parameter 'direction'",
         )
-        assertTrue(rule.check(values, params))
+    }
+
+    /** Классы эквивалентности: строго возрастает / равны / убывает × направление. */
+    @ParameterizedTest(name = "{0}: a={1}, b={2}, c={3} -> {4}")
+    @CsvSource(
+        "ASCENDING,  1.0, 2.0, 3.0, true",
+        "ASCENDING,  1.0, 1.0, 3.0, false",
+        "DESCENDING, 3.0, 2.0, 1.0, true",
+        "ascending,  1.0, 2.0, 3.0, true",
+    )
+    @EquivalencePartitioning
+    fun `check - strict ordering in requested direction`(direction: String, a: Double, b: Double, c: Double, expected: Boolean) {
+        // Arrange
+        val values = mapOf("a" to a, "b" to b, "c" to c)
+
+        // Act
+        val result = sut.check(values, params(direction, "a", "b", "c"))
+
+        // Assert
+        assertThat(result).isEqualTo(expected)
     }
 
     @Test
-    fun `non-strict ascending fails`() {
-        val values = mapOf("t1" to 1.0, "t2" to 1.0, "t3" to 2.0)
-        val params: Map<String, Any> = mapOf(
-            "fields" to listOf("t1", "t2", "t3"),
-            "direction" to "ASCENDING",
-        )
-        assertFalse(rule.check(values, params))
+    @BoundaryValues
+    fun `check - a single field is below the minimum of two`() {
+        // Arrange
+        val values = mapOf("a" to 1.0)
+
+        // Act
+        val error = assertThrows<IllegalArgumentException> { sut.check(values, params("ASCENDING", "a")) }
+
+        // Assert
+        assertThat(error.message).isEqualTo("ORDERED requires at least 2 fields")
     }
 
     @Test
-    fun `descending detects out-of-order`() {
-        val values = mapOf("a" to 3.0, "b" to 5.0, "c" to 1.0)
-        val params: Map<String, Any> = mapOf(
-            "fields" to listOf("a", "b", "c"),
-            "direction" to "DESCENDING",
-        )
-        assertFalse(rule.check(values, params))
-    }
-
-    @Test
-    fun `descending strict passes`() {
-        val values = mapOf("a" to 5.0, "b" to 3.0, "c" to 1.0)
-        val params: Map<String, Any> = mapOf(
-            "fields" to listOf("a", "b", "c"),
-            "direction" to "descending", // case-insensitive
-        )
-        assertTrue(rule.check(values, params))
-    }
-
-    @Test
-    fun `unknown direction throws`() {
+    @ErrorGuessing
+    fun `check - unknown direction is reported`() {
+        // Arrange
         val values = mapOf("a" to 1.0, "b" to 2.0)
-        assertThrows(IllegalArgumentException::class.java) {
-            rule.check(
-                values,
-                mapOf("fields" to listOf("a", "b"), "direction" to "SIDEWAYS"),
-            )
-        }
+
+        // Act
+        val error = assertThrows<IllegalArgumentException> { sut.check(values, params("SIDEWAYS", "a", "b")) }
+
+        // Assert
+        assertThat(error.message).contains("Unknown direction 'SIDEWAYS'")
     }
 
     @Test
-    fun `at least two fields required`() {
-        assertThrows(IllegalArgumentException::class.java) {
-            rule.check(mapOf("a" to 1.0), mapOf("fields" to listOf("a"), "direction" to "ASCENDING"))
-        }
+    @BoundaryValues
+    fun `validateParams - two fields are the minimal valid configuration`() {
+        // Arrange
+        val minimal = params("DESCENDING", "a", "b")
+
+        // Act
+        val errors = sut.validateParams(minimal)
+
+        // Assert
+        assertThat(errors).isEmpty()
     }
 
     @Test
-    fun `missing direction throws`() {
-        assertThrows(IllegalArgumentException::class.java) {
-            rule.check(mapOf("a" to 1.0, "b" to 2.0), mapOf("fields" to listOf("a", "b")))
-        }
+    @BoundaryValues
+    fun `validateParams - one field is rejected`() {
+        // Arrange
+        val tooFew = params("DESCENDING", "a")
+
+        // Act
+        val errors = sut.validateParams(tooFew)
+
+        // Assert
+        assertThat(errors).containsExactly("ORDERED requires at least 2 fields")
     }
+
 }

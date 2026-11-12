@@ -1,66 +1,108 @@
 package com.vargod.engine.validation
 
 import com.vargod.engine.ConstraintRule
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertSame
-import org.junit.jupiter.api.Assertions.assertThrows
+import com.vargod.support.RealEngines
+import com.vargod.testing.BoundaryValues
+import com.vargod.testing.Classical
+import com.vargod.testing.EquivalencePartitioning
+import com.vargod.testing.ErrorGuessing
+import io.qameta.allure.Epic
+import io.qameta.allure.Feature
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
+@Classical
+@Epic("Business logic")
+@Feature("Validation rules")
+@DisplayName("MapConstraintRuleRegistry")
 class MapConstraintRuleRegistryTest {
 
-    @Test
-    fun `getByType returns registered rule`() {
-        val sv = SumEqualsValueRule()
-        val sf = SumEqualsFieldRule()
-        val ord = OrderedRule()
-        val reg = MapConstraintRuleRegistry(listOf(sv, sf, ord))
-        assertSame(sv, reg.getByType("SUM_EQUALS_VALUE"))
-        assertSame(sf, reg.getByType("SUM_EQUALS_FIELD"))
-        assertSame(ord, reg.getByType("ORDERED"))
+    /** Минимальная реализация правила с произвольным type — для проверок конструктора. */
+    private fun ruleOfType(type: String): ConstraintRule = object : ConstraintRule {
+        override fun type() = type
+        override fun paramsSchema() = RuleParamsSchema(emptyList())
+        override fun check(values: Map<String, Any>, params: Map<String, Any>) = true
     }
 
     @Test
-    fun `listAll returns all rules keyed by type`() {
-        val reg = MapConstraintRuleRegistry(listOf(SumEqualsValueRule(), OrderedRule()))
-        val all = reg.listAll()
-        assertEquals(2, all.size)
-        assertEquals("SUM_EQUALS_VALUE", all["SUM_EQUALS_VALUE"]!!.type())
+    @EquivalencePartitioning
+    fun `getByType - returns the registered rule instance`() {
+        // Arrange
+        val ordered = OrderedRule()
+        val sut = MapConstraintRuleRegistry(listOf(RangeRule(), ordered))
+
+        // Act
+        val result = sut.getByType("ORDERED")
+
+        // Assert
+        assertThat(result).isSameAs(ordered)
     }
 
     @Test
-    fun `getByType throws on unknown`() {
-        val reg = MapConstraintRuleRegistry(listOf(SumEqualsValueRule()))
-        assertThrows(IllegalArgumentException::class.java) {
-            reg.getByType("MYSTERY")
-        }
+    @EquivalencePartitioning
+    fun `getByType - unknown type gives IllegalArgumentException`() {
+        // Arrange
+        val sut = RealEngines.ruleRegistry()
+
+        // Act
+        val error = assertThrows<IllegalArgumentException> { sut.getByType("NO_SUCH_RULE") }
+
+        // Assert
+        assertThat(error.message).isEqualTo("Unknown constraint rule type: NO_SUCH_RULE")
     }
 
     @Test
-    fun `duplicate types are rejected`() {
-        val a: ConstraintRule = object : ConstraintRule {
-            override fun type() = "X"
-            override fun paramsSchema() = RuleParamsSchema(emptyList())
-            override fun check(values: Map<String, Any>, params: Map<String, Any>) = true
-        }
-        val b: ConstraintRule = object : ConstraintRule {
-            override fun type() = "X"
-            override fun paramsSchema() = RuleParamsSchema(emptyList())
-            override fun check(values: Map<String, Any>, params: Map<String, Any>) = false
-        }
-        assertThrows(IllegalArgumentException::class.java) {
-            MapConstraintRuleRegistry(listOf(a, b))
-        }
+    @EquivalencePartitioning
+    fun `listAll - keeps registration order and keys rules by type`() {
+        // Arrange
+        val sut = RealEngines.ruleRegistry()
+
+        // Act
+        val all = sut.listAll()
+
+        // Assert
+        assertThat(all.keys).containsExactly("RANGE", "SUM_EQUALS_VALUE", "SUM_EQUALS_FIELD", "ORDERED")
+        assertThat(all).allSatisfy { type, rule -> assertThat(rule.type()).isEqualTo(type) }
     }
 
     @Test
-    fun `blank type is rejected`() {
-        val rule = object : ConstraintRule {
-            override fun type() = " "
-            override fun paramsSchema() = RuleParamsSchema(emptyList())
-            override fun check(values: Map<String, Any>, params: Map<String, Any>) = true
-        }
-        assertThrows(IllegalArgumentException::class.java) {
-            MapConstraintRuleRegistry(listOf(rule))
-        }
+    @BoundaryValues
+    fun `listAll - registry without rules is empty`() {
+        // Arrange
+        val sut = MapConstraintRuleRegistry(emptyList())
+
+        // Act
+        val all = sut.listAll()
+
+        // Assert
+        assertThat(all).isEmpty()
+    }
+
+    @Test
+    @ErrorGuessing
+    fun `constructor - duplicate rule type is rejected`() {
+        // Arrange
+        val rules = listOf(RangeRule(), RangeRule())
+
+        // Act
+        val error = assertThrows<IllegalArgumentException> { MapConstraintRuleRegistry(rules) }
+
+        // Assert
+        assertThat(error.message).isEqualTo("Duplicate constraint rule type: RANGE")
+    }
+
+    @Test
+    @BoundaryValues
+    fun `constructor - blank rule type is rejected`() {
+        // Arrange
+        val rules = listOf(ruleOfType("   "))
+
+        // Act
+        val error = assertThrows<IllegalArgumentException> { MapConstraintRuleRegistry(rules) }
+
+        // Assert
+        assertThat(error.message).contains("must not be blank")
     }
 }

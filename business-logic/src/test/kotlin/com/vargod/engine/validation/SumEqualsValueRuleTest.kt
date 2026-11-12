@@ -1,73 +1,146 @@
 package com.vargod.engine.validation
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Assertions.assertTrue
+import com.vargod.testing.BoundaryValues
+import com.vargod.testing.Classical
+import com.vargod.testing.EquivalencePartitioning
+import com.vargod.testing.ErrorGuessing
+import io.qameta.allure.Epic
+import io.qameta.allure.Feature
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
+@Classical
+@Epic("Business logic")
+@Feature("Validation rules")
+@DisplayName("SumEqualsValueRule")
 class SumEqualsValueRuleTest {
 
-    private val rule = SumEqualsValueRule()
+    private lateinit var sut: SumEqualsValueRule
 
-    @Test
-    fun `type is SUM_EQUALS_VALUE`() {
-        assertEquals("SUM_EQUALS_VALUE", rule.type())
+    private val fractions: Map<String, Any> = mapOf("fields" to listOf("a", "b", "c"), "expected" to 1.0)
+
+    @BeforeEach
+    fun setUp() {
+        sut = SumEqualsValueRule()
     }
 
     @Test
-    fun `passes when sum equals expected within default tolerance`() {
-        val values = mapOf("S" to 700.0, "I" to 299.9999999999, "R" to 0.0000000001)
-        val params: Map<String, Any> = mapOf(
-            "fields" to listOf("S", "I", "R"),
-            "expected" to 1000.0,
-        )
-        assertTrue(rule.check(values, params))
+    @EquivalencePartitioning
+    fun `type - is SUM_EQUALS_VALUE`() {
+        // Arrange
+        val expected = SumEqualsValueRule.TYPE
+
+        // Act
+        val type = sut.type()
+
+        // Assert
+        assertThat(type).isEqualTo(expected).isEqualTo("SUM_EQUALS_VALUE")
     }
 
     @Test
-    fun `fails when sum diverges from expected beyond tolerance`() {
-        val values = mapOf("S" to 800.0, "I" to 100.0, "R" to 50.0)
-        val params: Map<String, Any> = mapOf(
-            "fields" to listOf("S", "I", "R"),
-            "expected" to 1000.0,
-        )
-        assertFalse(rule.check(values, params))
+    @ErrorGuessing
+    fun `type - differs from the similar SUM_EQUALS_FIELD rule`() {
+        // Arrange
+        val similar = SumEqualsFieldRule.TYPE
+
+        // Act
+        val type = sut.type()
+
+        // Assert
+        assertThat(type).isNotEqualTo(similar)
     }
 
     @Test
-    fun `respects custom tolerance`() {
-        val values = mapOf("a" to 1.0, "b" to 1.0)
-        val params: Map<String, Any> = mapOf(
-            "fields" to listOf("a", "b"),
-            "expected" to 2.1,
-            "tolerance" to 0.2,
-        )
-        assertTrue(rule.check(values, params))
+    @EquivalencePartitioning
+    fun `paramsSchema - fields and expected are required`() {
+        // Arrange
+        val expectedRequired = listOf("fields", "expected")
+
+        // Act
+        val schema = sut.paramsSchema()
+
+        // Assert
+        assertThat(schema.fields.filter { it.required }.map { it.name }).isEqualTo(expectedRequired)
     }
 
     @Test
-    fun `throws when fields parameter is missing`() {
-        assertThrows(IllegalArgumentException::class.java) {
-            rule.check(mapOf("a" to 1.0), mapOf("expected" to 1.0))
-        }
+    @ErrorGuessing
+    fun `paramsSchema - expected given as text is rejected`() {
+        // Arrange
+        val schema = sut.paramsSchema()
+
+        // Act
+        val errors = schema.validate(mapOf("fields" to listOf("a"), "expected" to "1"))
+
+        // Assert
+        assertThat(errors).containsExactly("Parameter 'expected' must be a number, got String")
     }
 
     @Test
-    fun `throws when expected is missing or not numeric`() {
-        assertThrows(IllegalArgumentException::class.java) {
-            rule.check(mapOf("a" to 1.0), mapOf("fields" to listOf("a")))
-        }
+    @EquivalencePartitioning
+    fun `check - fractions summing to one pass`() {
+        // Arrange
+        val values = mapOf("a" to 0.2, "b" to 0.3, "c" to 0.5)
+
+        // Act
+        val result = sut.check(values, fractions)
+
+        // Assert
+        assertThat(result).isTrue()
     }
 
     @Test
-    fun `throws when a referenced field is missing or non-numeric`() {
-        val params: Map<String, Any> = mapOf("fields" to listOf("a", "b"), "expected" to 2.0)
-        assertThrows(IllegalArgumentException::class.java) {
-            rule.check(mapOf("a" to 1.0), params)
-        }
-        assertThrows(IllegalArgumentException::class.java) {
-            rule.check(mapOf("a" to "oops", "b" to 1.0), params)
-        }
+    @BoundaryValues
+    fun `check - difference twice the default tolerance fails`() {
+        // Arrange
+        val values = mapOf("a" to 0.5, "b" to 0.5, "c" to 2 * SumEqualsValueRule.DEFAULT_TOLERANCE)
+
+        // Act
+        val result = sut.check(values, fractions)
+
+        // Assert
+        assertThat(result).isFalse()
+    }
+
+    @Test
+    @ErrorGuessing
+    fun `check - missing fields parameter is reported`() {
+        // Arrange
+        val params = mapOf<String, Any>("expected" to 1.0)
+
+        // Act
+        val error = assertThrows<IllegalArgumentException> { sut.check(mapOf("a" to 1.0), params) }
+
+        // Assert
+        assertThat(error.message).isEqualTo("Missing 'fields' parameter")
+    }
+
+    @Test
+    @EquivalencePartitioning
+    fun `validateParams - complete configuration has no errors`() {
+        // Arrange
+        val complete = fractions + ("tolerance" to 1e-6)
+
+        // Act
+        val errors = sut.validateParams(complete)
+
+        // Assert
+        assertThat(errors).isEmpty()
+    }
+
+    @Test
+    @EquivalencePartitioning
+    fun `validateParams - missing expected is reported`() {
+        // Arrange
+        val incomplete = mapOf<String, Any>("fields" to listOf("a", "b"))
+
+        // Act
+        val errors = sut.validateParams(incomplete)
+
+        // Assert
+        assertThat(errors).containsExactly("Missing required parameter 'expected'")
     }
 }

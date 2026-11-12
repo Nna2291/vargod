@@ -8,12 +8,15 @@ import com.vargod.domain.repository.ComparisonRepository
 import com.vargod.domain.repository.ExperimentRepository
 import com.vargod.service.ComparisonService
 import org.slf4j.LoggerFactory
+import java.time.Clock
 import java.time.Instant
 import java.util.UUID
 
 class ComparisonServiceImpl(
     private val comparisonRepository: ComparisonRepository,
     private val experimentRepository: ExperimentRepository,
+    /** Источник времени для createdAt (внедряется ради детерминированных тестов). */
+    private val clock: Clock = Clock.systemUTC(),
 ) : ComparisonService {
 
     private val log = LoggerFactory.getLogger(ComparisonServiceImpl::class.java)
@@ -37,7 +40,7 @@ class ComparisonServiceImpl(
             name = null,
             userId = userId,
             experiments = experiments,
-            createdAt = Instant.now(),
+            createdAt = Instant.now(clock),
         )
         val saved = comparisonRepository.save(comparison)
         log.info("Сравнение {} создано", saved.id)

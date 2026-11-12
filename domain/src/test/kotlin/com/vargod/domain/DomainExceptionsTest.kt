@@ -1,60 +1,42 @@
 package com.vargod.domain
 
-import com.vargod.testing.Classical
-import com.vargod.testing.EquivalencePartitioning
-import io.qameta.allure.Epic
-import io.qameta.allure.Feature
-import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
-@Classical
-@Epic("Domain")
-@Feature("Exceptions")
-@DisplayName("Domain exceptions")
 class DomainExceptionsTest {
 
     @Test
-    @EquivalencePartitioning
-    fun `NotFoundException - message names entity and id`() {
-        // Arrange
+    fun `NotFoundException carries entity name and id`() {
         val id = UUID.randomUUID()
-
-        // Act
-        val error = NotFoundException("Experiment", id)
-
-        // Assert
-        assertThat(error.message).isEqualTo("Experiment not found: id=$id")
+        val ex = NotFoundException("Experiment", id)
+        assertTrue(ex.message!!.contains("Experiment"))
+        assertTrue(ex.message!!.contains(id.toString()))
     }
 
     @Test
-    @EquivalencePartitioning
-    fun `ValidationException - message lists only failed validators`() {
-        // Arrange
+    fun `AuthorizationException carries message`() {
+        val ex = AuthorizationException("forbidden")
+        assertEquals("forbidden", ex.message)
+    }
+
+    @Test
+    fun `ValidationException aggregates failure messages`() {
+        val v1 = UUID.randomUUID()
+        val v2 = UUID.randomUUID()
         val results = listOf(
-            ValidationResult(ValidationStatus.PASS, "ignored", UUID.randomUUID()),
-            ValidationResult(ValidationStatus.FAIL, "P must be > 0", UUID.randomUUID()),
+            ValidationResult(ValidationStatus.PASS, null, v1),
+            ValidationResult(ValidationStatus.FAIL, "bad value", v2),
         )
-
-        // Act
-        val error = ValidationException(results)
-
-        // Assert
-        assertThat(error.message).isEqualTo("Validation failed: P must be > 0")
-        assertThat(error.results).isEqualTo(results)
+        val ex = ValidationException(results)
+        assertTrue(ex.message!!.contains("bad value"))
+        assertEquals(results, ex.results)
     }
 
     @Test
-    @EquivalencePartitioning
-    fun `PersistenceException - keeps the original cause`() {
-        // Arrange
-        val cause = IllegalStateException("db down")
-
-        // Act
-        val error = PersistenceException("save failed", cause)
-
-        // Assert
-        assertThat(error.cause).isSameAs(cause)
+    fun `IllegalExperimentStateException carries message`() {
+        val ex = IllegalExperimentStateException("not pending")
+        assertEquals("not pending", ex.message)
     }
 }

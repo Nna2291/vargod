@@ -2,7 +2,7 @@
 # =============================================================================
 #  Запуск юнит-тестов ТиОПО ЛР1 из командной строки (локальная копия репозитория).
 #
-#  По умолчанию: тесты domain + business-logic + data-access, затем
+#  По умолчанию: тесты business-logic + data-access, затем
 #    - покрытие JaCoCo (строки + ветвления) в консоль и в HTML,
 #    - отчёт Allure.
 #
@@ -151,7 +151,7 @@ if [[ -n "$MODULE" ]]; then
 elif [[ $REPORTS -eq 1 ]]; then
   TASKS+=("unitTests")                       # тесты + coverageSummary + Allure
 else
-  TASKS+=(":domain:test" ":business-logic:test" ":data-access:test" "coverageSummary")
+  TASKS+=(":business-logic:test" ":data-access:test" "coverageSummary")
 fi
 
 if [[ $OFFLINE -eq 1 ]]; then

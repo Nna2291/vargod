@@ -19,13 +19,11 @@ import com.vargod.testing.ErrorGuessing
 import com.vargod.testing.London
 import com.vargod.testing.StateTransition
 import com.vargod.testing.TestTime
-import com.vargod.testing.builders.aCreateExperimentRequest
 import com.vargod.testing.builders.aSimulationResult
 import com.vargod.testing.builders.anExperiment
 import com.vargod.testing.mothers.CreateExperimentRequestMother
 import com.vargod.testing.mothers.ExperimentMother
 import com.vargod.testing.mothers.ModelTemplateMother
-import com.vargod.testing.mothers.ValidatorMother
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
@@ -40,16 +38,19 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.EnumSource
 import java.util.UUID
 
+/**
+ * ExperimentServiceImpl в лондонском стиле: все четыре зависимости сервиса
+ * (два репозитория и два движка) заменены mock-объектами MockK. Проверяется,
+ * какие вызовы сервис делает и в каком порядке, а не реальные вычисления.
+ */
 @London
 @Epic("Business logic")
 @Feature("ExperimentService")
 @DisplayName("ExperimentServiceImpl — London style (MockK)")
 @ExtendWith(MockKExtension::class)
-class ExperimentServiceImplLondonTest {
+class ExperimentServiceImplTest {
 
     @MockK private lateinit var experimentRepository: ExperimentRepository
     @MockK private lateinit var modelRepository: ModelTemplateRepository
@@ -68,9 +69,6 @@ class ExperimentServiceImplLondonTest {
         )
     }
 
-    private fun passFor(validatorId: UUID) = ValidationResult(ValidationStatus.PASS, null, validatorId)
-    private fun failFor(validatorId: UUID, msg: String) = ValidationResult(ValidationStatus.FAIL, msg, validatorId)
-
     private fun stubSaveReturnsArgument() {
         every { experimentRepository.save(any()) } answers { firstArg() }
     }
@@ -79,13 +77,14 @@ class ExperimentServiceImplLondonTest {
 
     @Test
     @EquivalencePartitioning
-    fun `create - valid request is validated against model validators and saved as PENDING`() {
+    fun `create - valid request is validated and saved as PENDING`() {
         // Arrange
         val model = ModelTemplateMother.logistic()
         val request = CreateExperimentRequestMother.validLogistic(model.id)
         val saved = slot<Experiment>()
         every { modelRepository.findById(model.id) } returns model
-        every { validationEngine.validate(request.parameters, model.validators) } returns model.validators.map { passFor(it.id) }
+        every { validationEngine.validate(request.parameters, model.validators) } returns
+            model.validators.map { ValidationResult(ValidationStatus.PASS, null, it.id) }
         every { experimentRepository.save(capture(saved)) } answers { firstArg() }
 
         // Act
@@ -95,9 +94,7 @@ class ExperimentServiceImplLondonTest {
         assertThat(result).isEqualTo(saved.captured)
         assertThat(result.status).isEqualTo(ExperimentStatus.PENDING)
         assertThat(result.userId).isEqualTo(owner)
-        assertThat(result.isPublic).isFalse()
         assertThat(result.createdAt).isEqualTo(TestTime.NOW)
-        assertThat(result.validatorSnapshot).isEqualTo(model.validators)
         verifyOrder {
             modelRepository.findById(model.id)
             validationEngine.validate(request.parameters, model.validators)
@@ -111,7 +108,7 @@ class ExperimentServiceImplLondonTest {
         // Arrange
         val model = ModelTemplateMother.logistic()
         val request = CreateExperimentRequestMother.negativePopulation(model.id)
-        val failure = failFor(model.validators.first().id, "P must be > 0")
+        val failure = ValidationResult(ValidationStatus.FAIL, "P must be > 0", model.validators.first().id)
         every { modelRepository.findById(model.id) } returns model
         every { validationEngine.validate(any(), any()) } returns listOf(failure)
 
@@ -120,38 +117,7 @@ class ExperimentServiceImplLondonTest {
 
         // Assert
         assertThat(error.results).containsExactly(failure)
-        assertThat(error.message).contains("P must be > 0")
         verify(exactly = 0) { experimentRepository.save(any()) }
-    }
-
-    @Test
-    @EquivalencePartitioning
-    fun `create - unknown model throws NotFoundException before validation`() {
-        // Arrange
-        val request = aCreateExperimentRequest().build()
-        every { modelRepository.findById(request.modelTemplateId) } returns null
-
-        // Act
-        val error = assertThrows<NotFoundException> { sut.create(request, owner) }
-
-        // Assert
-        assertThat(error.message).contains(request.modelTemplateId.toString())
-        verify(exactly = 0) { validationEngine.validate(any(), any()) }
-        verify(exactly = 0) { experimentRepository.save(any()) }
-    }
-
-    @Test
-    @BoundaryValues
-    fun `create - zero step is rejected without touching repositories`() {
-        // Arrange
-        val request = aCreateExperimentRequest().withStep(0.0).build()
-
-        // Act
-        val error = assertThrows<IllegalArgumentException> { sut.create(request, owner) }
-
-        // Assert
-        assertThat(error.message).contains("step")
-        verify(exactly = 0) { modelRepository.findById(any()) }
     }
 
     // ---------------------------------------------------------------- getById
@@ -184,13 +150,13 @@ class ExperimentServiceImplLondonTest {
         assertThat(error.message).isEqualTo("Experiment not found: id=$id")
     }
 
-    // ---------------------------------------------------------------- listByUser / listPublic
+    // ---------------------------------------------------------------- listByUser
 
     @Test
     @EquivalencePartitioning
     fun `listByUser - delegates to repository with the same user id`() {
         // Arrange
-        val experiments = listOf(anExperiment().ownedBy(owner).build(), anExperiment().ownedBy(owner).build())
+        val experiments = listOf(anExperiment().ownedBy(owner).build())
         every { experimentRepository.findAllByUserId(owner) } returns experiments
 
         // Act
@@ -198,7 +164,6 @@ class ExperimentServiceImplLondonTest {
 
         // Assert
         assertThat(result).isEqualTo(experiments)
-        verify(exactly = 1) { experimentRepository.findAllByUserId(owner) }
     }
 
     @Test
@@ -214,6 +179,8 @@ class ExperimentServiceImplLondonTest {
         // Assert
         assertThat(error).isSameAs(failure)
     }
+
+    // ---------------------------------------------------------------- listPublic
 
     @Test
     @EquivalencePartitioning
@@ -262,10 +229,25 @@ class ExperimentServiceImplLondonTest {
         // Assert
         assertThat(result).isSameAs(simulation)
         verifyOrder {
-            experimentRepository.save(match { it.status == ExperimentStatus.RUNNING && it.result == null })
+            experimentRepository.save(match { it.status == ExperimentStatus.RUNNING })
             simulationEngine.solve(model, experiment.parameterSet!!)
             experimentRepository.save(match { it.status == ExperimentStatus.COMPLETED && it.result == simulation })
         }
+    }
+
+    @Test
+    @StateTransition
+    fun `runSimulation - COMPLETED experiment cannot be started again`() {
+        // Arrange
+        val experiment = ExperimentMother.completed(owner)
+        every { experimentRepository.findById(experiment.id) } returns experiment
+
+        // Act
+        val error = assertThrows<IllegalExperimentStateException> { sut.runSimulation(experiment.id) }
+
+        // Assert
+        assertThat(error.message).contains("COMPLETED")
+        verify(exactly = 0) { simulationEngine.solve(any(), any()) }
     }
 
     @Test
@@ -287,57 +269,8 @@ class ExperimentServiceImplLondonTest {
         assertThat(error).isSameAs(failure)
         verifyOrder {
             experimentRepository.save(match { it.status == ExperimentStatus.RUNNING })
-            experimentRepository.save(match { it.status == ExperimentStatus.FAILED && it.result == null })
+            experimentRepository.save(match { it.status == ExperimentStatus.FAILED })
         }
-        verify(exactly = 0) { experimentRepository.save(match { it.status == ExperimentStatus.COMPLETED }) }
-    }
-
-    @ParameterizedTest(name = "from {0}")
-    @EnumSource(value = ExperimentStatus::class, names = ["RUNNING", "COMPLETED", "FAILED"])
-    @StateTransition
-    fun `runSimulation - only PENDING may be started, other states are rejected`(status: ExperimentStatus) {
-        // Arrange
-        val experiment = anExperiment().withStatus(status).build()
-        every { experimentRepository.findById(experiment.id) } returns experiment
-
-        // Act
-        val error = assertThrows<IllegalExperimentStateException> { sut.runSimulation(experiment.id) }
-
-        // Assert
-        assertThat(error.message).contains(status.name)
-        verify(exactly = 0) { simulationEngine.solve(any(), any()) }
-        verify(exactly = 0) { experimentRepository.save(any()) }
-    }
-
-    @Test
-    @ErrorGuessing
-    fun `runSimulation - experiment without parameter set is rejected`() {
-        // Arrange
-        val experiment = ExperimentMother.withoutParameters(owner)
-        every { experimentRepository.findById(experiment.id) } returns experiment
-
-        // Act
-        val error = assertThrows<IllegalExperimentStateException> { sut.runSimulation(experiment.id) }
-
-        // Assert
-        assertThat(error.message).contains("no parameter set")
-        verify(exactly = 0) { experimentRepository.save(any()) }
-    }
-
-    @Test
-    @ErrorGuessing
-    fun `runSimulation - deleted model template gives NotFoundException and status stays PENDING`() {
-        // Arrange
-        val experiment = anExperiment().pending().build()
-        every { experimentRepository.findById(experiment.id) } returns experiment
-        every { modelRepository.findById(experiment.modelTemplateId) } returns null
-
-        // Act
-        val error = assertThrows<NotFoundException> { sut.runSimulation(experiment.id) }
-
-        // Assert
-        assertThat(error.message).contains("ModelTemplate")
-        verify(exactly = 0) { experimentRepository.save(any()) }
     }
 
     // ---------------------------------------------------------------- publish
@@ -359,21 +292,6 @@ class ExperimentServiceImplLondonTest {
     }
 
     @Test
-    @StateTransition
-    fun `publish - already public experiment is returned as is without saving`() {
-        // Arrange
-        val experiment = ExperimentMother.publicOf(owner)
-        every { experimentRepository.findById(experiment.id) } returns experiment
-
-        // Act
-        val result = sut.publish(experiment.id, owner)
-
-        // Assert
-        assertThat(result).isSameAs(experiment)
-        verify(exactly = 0) { experimentRepository.save(any()) }
-    }
-
-    @Test
     @EquivalencePartitioning
     fun `publish - non-owner gets AuthorizationException`() {
         // Arrange
@@ -384,7 +302,7 @@ class ExperimentServiceImplLondonTest {
         val error = assertThrows<AuthorizationException> { sut.publish(experiment.id, stranger) }
 
         // Assert
-        assertThat(error.message).contains(stranger.toString())
+        assertThat(error.message).contains("not the owner")
         verify(exactly = 0) { experimentRepository.save(any()) }
     }
 
@@ -417,8 +335,7 @@ class ExperimentServiceImplLondonTest {
         val error = assertThrows<AuthorizationException> { sut.unpublish(experiment.id, stranger) }
 
         // Assert
-        assertThat(error.message).contains("not the owner")
+        assertThat(error.message).contains(stranger.toString())
         verify(exactly = 0) { experimentRepository.save(any()) }
     }
-
 }

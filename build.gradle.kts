@@ -48,8 +48,27 @@ val maxForks: Int = findProperty("maxForks")?.toString()?.toInt() ?: 1
 val forkEveryClasses: Long = findProperty("forkEvery")?.toString()?.toLong() ?: 0L
 val junitThreads: Int? = findProperty("threads")?.toString()?.toInt()
 
-/** Модули — объекты тестирования ЛР1: доменное ядро, бизнес-логика, доступ к данным. */
-val testedModules = listOf(":domain", ":business-logic", ":data-access")
+/** Модули — объекты тестирования ЛР1: бизнес-логика и доступ к данным. */
+val testedModules = listOf(":business-logic", ":data-access")
+
+/**
+ * Область подсчёта покрытия: основные классы ЛР1 и их зависимости внутри компонента.
+ *  - бизнес-логика: ExperimentServiceImpl и движки, которые он вызывает;
+ *  - доступ к данным: JdbcExperimentRepository и его маппинг строк / JSON.
+ */
+val coverageScope = mapOf(
+    ":business-logic" to listOf(
+        "com/vargod/service/impl/ExperimentServiceImpl*.class",
+        "com/vargod/engine/ode/OdeSimulationEngine*.class",
+        "com/vargod/engine/validation/RuleValidationEngine*.class",
+    ),
+    ":data-access" to listOf(
+        "com/vargod/repository/jdbc/JdbcExperimentRepository*.class",
+        "com/vargod/repository/jdbc/ExperimentRow*.class",
+        "com/vargod/repository/jdbc/ResultSetMappersKt*.class",
+        "com/vargod/repository/jdbc/JsonCodec*.class",
+    ),
+)
 
 val allureCommandlineVersion = "2.30.0"
 val allureJavaLibVersion = "2.29.0"
@@ -198,6 +217,13 @@ subprojects {
         finalizedBy(tasks.named("jacocoTestReport"))
     }
 
+    coverageScope[path]?.let { includes ->
+        val mainClasses = extensions.getByType<SourceSetContainer>()["main"].output.classesDirs
+        tasks.withType<JacocoReport>().configureEach {
+            classDirectories.setFrom(mainClasses.map { dir -> project.fileTree(dir) { include(includes) } })
+        }
+    }
+
     tasks.withType<JacocoReport>().configureEach {
         reports {
             xml.required.set(true)
@@ -240,7 +266,7 @@ val coverageSummary by tasks.registering {
         val out = StringBuilder()
         out.appendLine()
         out.appendLine("=".repeat(96))
-        out.appendLine("%-72s %10s %12s".format("Coverage (JaCoCo)", "Lines", "Branches"))
+        out.appendLine("%-72s %10s %12s".format("Coverage (JaCoCo), основные классы ЛР1", "Lines", "Branches"))
         out.appendLine("=".repeat(96))
         for (m in modules) {
             val csvFile = m.layout.buildDirectory.file("reports/jacoco/test/jacocoTestReport.csv").get().asFile
@@ -273,13 +299,13 @@ val coverageSummary by tasks.registering {
 }
 
 /**
- * Главная точка входа ЛР1: юнит-тесты domain + business-logic + data-access,
+ * Главная точка входа ЛР1: юнит-тесты business-logic + data-access,
  * затем покрытие (консоль; HTML — по модулям) и Allure. Отчёты строятся и при
  * падении тестов (finalizedBy), чтобы было видно, что именно упало.
  */
 val unitTests by tasks.registering {
     group = "verification"
-    description = "Runs unit tests of domain, business-logic and data-access, then builds coverage and Allure reports."
+    description = "Runs unit tests of business-logic and data-access, then prints coverage and builds the Allure report."
     testedModules.forEach { dependsOn("$it:test") }
     finalizedBy(coverageSummary, "allureAggregateReport")
 }

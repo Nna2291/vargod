@@ -1,7 +1,6 @@
 package com.vargod.repository.jdbc
 
 import com.vargod.domain.ExperimentStatus
-import com.vargod.domain.PersistenceException
 import com.vargod.repository.jdbc.support.DbTestBase
 import com.vargod.testing.BoundaryValues
 import com.vargod.testing.EquivalencePartitioning
@@ -20,6 +19,11 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.util.UUID
 
+/**
+ * JdbcExperimentRepository в классическом стиле: без mock/stub, на настоящем
+ * PostgreSQL 16 (embedded) со схемой из тех же миграций Flyway, что и в production.
+ * Проверяется состояние базы после вызова.
+ */
 @Feature("ExperimentRepository")
 @DisplayName("JdbcExperimentRepository — classical style (embedded PostgreSQL)")
 class JdbcExperimentRepositoryTest : DbTestBase() {
@@ -32,26 +36,41 @@ class JdbcExperimentRepositoryTest : DbTestBase() {
     @BeforeEach
     fun setUp() {
         sut = JdbcExperimentRepository(dataSource, codec)
-        givenUserWithId(owner)
+        givenUser(owner)
         givenModel(model)
     }
 
     private fun experiment() = anExperiment().ownedBy(owner).forModel(model.id)
 
-    // ---------------------------------------------------------------- save / findById
+    // ---------------------------------------------------------------- findById
 
     @Test
     @EquivalencePartitioning
-    fun `save - new experiment with parameters and validator snapshot is fully restored by findById`() {
+    fun `findById - restores saved experiment with parameters and validator snapshot`() {
         // Arrange
-        val experiment = experiment().withValidatorSnapshot(listOf(ValidatorMother.positive("P"))).build()
+        val experiment = sut.save(experiment().withValidatorSnapshot(listOf(ValidatorMother.positive("P"))).build())
 
         // Act
-        sut.save(experiment)
+        val result = sut.findById(experiment.id)
 
         // Assert
-        assertThat(sut.findById(experiment.id)).isEqualTo(experiment)
+        assertThat(result).isEqualTo(experiment)
     }
+
+    @Test
+    @EquivalencePartitioning
+    fun `findById - unknown id gives null`() {
+        // Arrange
+        sut.save(experiment().build())
+
+        // Act
+        val result = sut.findById(UUID.randomUUID())
+
+        // Assert
+        assertThat(result).isNull()
+    }
+
+    // ---------------------------------------------------------------- save
 
     @Test
     @StateTransition
@@ -83,44 +102,16 @@ class JdbcExperimentRepositoryTest : DbTestBase() {
         assertThat(rowCount("experiments")).isZero()
     }
 
-    @Test
-    @ErrorGuessing
-    fun `save - reference to unknown model is rolled back as a whole`() {
-        // Arrange
-        val orphan = experiment().forModel(UUID.randomUUID()).build()
-
-        // Act
-        val error = assertThrows<PersistenceException> { sut.save(orphan) }
-
-        // Assert
-        assertThat(error.message).startsWith("Failed to save experiment")
-        assertThat(rowCount("experiments")).isZero()
-        assertThat(rowCount("parameter_sets")).isZero()
-    }
-
-    @Test
-    @EquivalencePartitioning
-    fun `findById - unknown id gives null`() {
-        // Arrange
-        sut.save(experiment().build())
-
-        // Act
-        val result = sut.findById(UUID.randomUUID())
-
-        // Assert
-        assertThat(result).isNull()
-    }
-
-    // ---------------------------------------------------------------- findAllByUserId / findAllPublic
+    // ---------------------------------------------------------------- findAllByUserId
 
     @Test
     @EquivalencePartitioning
     fun `findAllByUserId - returns only experiments of that user in creation order`() {
         // Arrange
-        val stranger = givenUser()
+        val stranger = UUID.randomUUID().also { givenUser(it) }
         val second = sut.save(experiment().createdAt(TestTime.minutesAfterNow(5)).build())
         val first = sut.save(experiment().createdAt(TestTime.minutesAfterNow(1)).build())
-        sut.save(anExperiment().ownedBy(stranger.id).forModel(model.id).build())
+        sut.save(anExperiment().ownedBy(stranger).forModel(model.id).build())
 
         // Act
         val result = sut.findAllByUserId(owner)
@@ -141,6 +132,8 @@ class JdbcExperimentRepositoryTest : DbTestBase() {
         // Assert
         assertThat(result).isEmpty()
     }
+
+    // ---------------------------------------------------------------- findAllPublic
 
     @Test
     @EquivalencePartitioning

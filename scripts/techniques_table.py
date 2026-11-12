@@ -14,7 +14,7 @@ import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-MODULES = ["domain", "business-logic", "data-access"]
+MODULES = ["business-logic", "data-access"]
 
 TECHNIQUES = {
     "EquivalencePartitioning": "Классы эквивалентности",
@@ -76,7 +76,7 @@ def main():
     out.write("# ТиОПО ЛР1 — техники подготовки тестовых данных\n\n")
     out.write("> Сгенерировано `python3 scripts/techniques_table.py` по аннотациям над тестами.\n")
     out.write("> Параметризованный тест (★) — один метод, несколько наборов данных.\n")
-    out.write("> Тесты базового класса `OdeModelContractTest` наследуют все 7 классов ОДУ-моделей.\n\n")
+    out.write("\n")
     out.write("## Сводка\n\n| Техника | Тест-методов |\n|---|---|\n")
     for tech, n in counts.most_common():
         out.write(f"| {tech} | {n} |\n")

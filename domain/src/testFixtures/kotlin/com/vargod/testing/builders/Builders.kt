@@ -1,14 +1,10 @@
 package com.vargod.testing.builders
 
-import com.vargod.domain.AuditEntry
-import com.vargod.domain.Comparison
 import com.vargod.domain.Experiment
 import com.vargod.domain.ExperimentStatus
 import com.vargod.domain.ModelTemplate
 import com.vargod.domain.ParameterSet
-import com.vargod.domain.Role
 import com.vargod.domain.SimulationResult
-import com.vargod.domain.User
 import com.vargod.domain.Validator
 import com.vargod.domain.ValidatorTargetKind
 import com.vargod.domain.ValidatorType
@@ -21,42 +17,21 @@ import java.util.UUID
  * Test Data Builder (Nat Pryce): у каждого поля есть разумное значение по умолчанию,
  * тест переопределяет только то, что важно для проверяемого поведения:
  *
- *     val experiment = anExperiment().ownedBy(alice).asPublic().build()
+ *     val experiment = anExperiment().ownedBy(owner).asPublic().build()
  *
  * Так тест не ломается при добавлении нового поля в сущность (устойчивость
  * к рефакторингу), а из кода видно, какие данные значимы для теста.
- * Фабричные функции aUser(), anExperiment() и т.п. — точка входа в builder.
+ * Фабричные функции anExperiment(), aModelTemplate() и т.п. — точка входа в builder.
  */
 
 private fun shortId(): String = UUID.randomUUID().toString().take(8)
 
-fun aUser() = UserBuilder()
 fun aParameterSet() = ParameterSetBuilder()
 fun aSimulationResult() = SimulationResultBuilder()
 fun anExperiment() = ExperimentBuilder()
 fun aModelTemplate() = ModelTemplateBuilder()
 fun aValidator() = ValidatorBuilder()
 fun aCreateExperimentRequest() = CreateExperimentRequestBuilder()
-fun aComparison() = ComparisonBuilder()
-fun anAuditEntry() = AuditEntryBuilder()
-
-class UserBuilder {
-    private var id: UUID = UUID.randomUUID()
-    private var email: String = "user-${shortId()}@vargod.test"
-    private var passwordHash: String = "not-a-real-bcrypt-hash"
-    private var role: Role = Role.RESEARCHER
-    private var createdAt: Instant = TestTime.NOW
-
-    fun withId(id: UUID) = apply { this.id = id }
-    fun withEmail(email: String) = apply { this.email = email }
-    fun withPasswordHash(hash: String) = apply { this.passwordHash = hash }
-    fun withRole(role: Role) = apply { this.role = role }
-    fun asAdmin() = withRole(Role.ADMIN)
-    fun asResearcher() = withRole(Role.RESEARCHER)
-    fun createdAt(instant: Instant) = apply { this.createdAt = instant }
-
-    fun build() = User(id, email, passwordHash, role, createdAt)
-}
 
 class ParameterSetBuilder {
     private var id: UUID = UUID.randomUUID()
@@ -238,42 +213,4 @@ class CreateExperimentRequestBuilder {
     fun withStep(step: Double) = apply { this.step = step }
 
     fun build() = CreateExperimentRequest(name, modelTemplateId, parameters, tStart, tEnd, step)
-}
-
-class ComparisonBuilder {
-    private var id: UUID = UUID.randomUUID()
-    private var name: String? = "comparison-${shortId()}"
-    private var userId: UUID = UUID.randomUUID()
-    private var experiments: List<Experiment> = emptyList()
-    private var createdAt: Instant = TestTime.NOW
-
-    fun withId(id: UUID) = apply { this.id = id }
-    fun named(name: String?) = apply { this.name = name }
-    fun ownedBy(userId: UUID) = apply { this.userId = userId }
-    fun of(vararg experiments: Experiment) = apply { this.experiments = experiments.toList() }
-    fun of(experiments: List<Experiment>) = apply { this.experiments = experiments }
-    fun createdAt(instant: Instant) = apply { this.createdAt = instant }
-
-    fun build() = Comparison(id, name, userId, experiments, createdAt)
-}
-
-class AuditEntryBuilder {
-    private var id: UUID = UUID.randomUUID()
-    private var userId: UUID? = null
-    private var userEmail: String? = null
-    private var action: String = "USER_CREATE"
-    private var targetType: String? = null
-    private var targetId: UUID? = null
-    private var payload: String? = null
-    private var createdAt: Instant = TestTime.NOW
-
-    fun withId(id: UUID) = apply { this.id = id }
-    fun by(user: User?) = apply { this.userId = user?.id; this.userEmail = user?.email }
-    fun byUserId(userId: UUID?) = apply { this.userId = userId }
-    fun withAction(action: String) = apply { this.action = action }
-    fun targeting(type: String?, id: UUID?) = apply { this.targetType = type; this.targetId = id }
-    fun withPayload(payload: String?) = apply { this.payload = payload }
-    fun createdAt(instant: Instant) = apply { this.createdAt = instant }
-
-    fun build() = AuditEntry(id, userId, userEmail, action, targetType, targetId, payload, createdAt)
 }

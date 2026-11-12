@@ -19,13 +19,14 @@
 #
 #  По умолчанию включён экономный режим для слабых машин (без демона Gradle,
 #  Kotlin-компилятор внутри процесса Gradle, 1 воркер). --fast его выключает.
+#  Нужен JDK 17+: скрипт ищет его сам; --install-jdk скачает Temurin 17 без sudo.
 # =============================================================================
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-usage() { sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+usage() { awk 'NR > 1 && /^set -euo/ { exit } NR > 1' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 
 GRADLE_ARGS=()
 TASKS=()
@@ -34,6 +35,7 @@ REPORTS=1
 SERVE=0
 LOW_MEM=1
 OFFLINE=0
+INSTALL_JDK=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -51,23 +53,86 @@ while [[ $# -gt 0 ]]; do
     --no-report)     REPORTS=0 ;;
     --serve)         SERVE=1 ;;
     --fast)          LOW_MEM=0 ;;
+    --install-jdk)   INSTALL_JDK=1 ;;
     -h|--help)       usage 0 ;;
     *) echo "Неизвестный параметр: $1" >&2; usage 1 ;;
   esac
   shift
 done
 
-# --- JDK 17: системная java или локально распакованная в ~/.local/share/jdks ----------
-if [[ -z "${JAVA_HOME:-}" ]] && ! command -v java >/dev/null 2>&1; then
-  LOCAL_JDK="$(ls -d "$HOME"/.local/share/jdks/jdk-17* 2>/dev/null | head -n1 || true)"
-  if [[ -n "$LOCAL_JDK" ]]; then
-    export JAVA_HOME="$LOCAL_JDK"
+# --- JDK 17+ -----------------------------------------------------------------------------
+# Gradle и Spring Boot 3 требуют Java >= 17. Системная java может оказаться старее
+# (например, 11), поэтому проверяем версию и при необходимости ищем подходящий JDK.
+
+# Мажорная версия java по пути к её домашнему каталогу ("" если не java).
+java_major() {
+  [[ -x "$1/bin/java" ]] || return 0
+  "$1/bin/java" -version 2>&1 | awk -F'"' '/version/ { split($2, v, "."); print (v[1] == "1") ? v[2] : v[1]; exit }'
+}
+
+install_jdk() {
+  local arch dest
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    echo "На macOS поставьте JDK 17 так:  brew install --cask temurin@17" >&2
+    exit 1
+  fi
+  case "$(uname -m)" in
+    x86_64|amd64)  arch="x64" ;;
+    aarch64|arm64) arch="aarch64" ;;
+    *) echo "Неизвестная архитектура $(uname -m): установите JDK 17 вручную." >&2; exit 1 ;;
+  esac
+  dest="$HOME/.local/share/jdks"
+  mkdir -p "$dest"
+  echo ">>> Скачиваю Eclipse Temurin JDK 17 ($arch) в $dest ..."
+  curl -fSL "https://api.adoptium.net/v3/binary/latest/17/ga/linux/$arch/jdk/hotspot/normal/eclipse" \
+    -o "$dest/jdk17.tar.gz"
+  tar -xzf "$dest/jdk17.tar.gz" -C "$dest"
+  rm -f "$dest/jdk17.tar.gz"
+}
+
+pick_jdk() {
+  local candidate
+  local -a candidates=()
+  [[ -n "${JAVA_HOME:-}" ]] && candidates+=("$JAVA_HOME")
+  if command -v java >/dev/null 2>&1; then
+    candidates+=("$(dirname "$(dirname "$(readlink -f "$(command -v java)" 2>/dev/null || command -v java)")")")
+  fi
+  if [[ -x /usr/libexec/java_home ]]; then # macOS
+    candidate="$(/usr/libexec/java_home -v 17 2>/dev/null || true)"
+    [[ -n "$candidate" ]] && candidates+=("$candidate")
+  fi
+  for candidate in "$HOME"/.local/share/jdks/* /usr/lib/jvm/* "$HOME"/.sdkman/candidates/java/* /opt/*jdk* \
+                   /Library/Java/JavaVirtualMachines/*/Contents/Home \
+                   /opt/homebrew/opt/openjdk@17 /opt/homebrew/opt/openjdk /usr/local/opt/openjdk@17 /usr/local/opt/openjdk; do
+    [[ -d "$candidate" ]] && candidates+=("$candidate")
+  done
+  for candidate in "${candidates[@]}"; do
+    local major
+    major="$(java_major "$candidate")"
+    if [[ -n "$major" && "$major" -ge 17 ]]; then
+      echo "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+if ! JDK="$(pick_jdk)"; then
+  if [[ $INSTALL_JDK -eq 1 ]]; then
+    install_jdk
+    JDK="$(pick_jdk)" || { echo "JDK 17 не удалось установить." >&2; exit 1; }
   else
-    echo "Не найдена Java 17. Установите JDK 17 или задайте JAVA_HOME." >&2
+    echo "Не найден JDK 17 или новее (системная java: $(command -v java >/dev/null && java -version 2>&1 | head -n1 || echo 'нет'))." >&2
+    echo "Варианты:" >&2
+    echo "  ./scripts/run-tests.sh --install-jdk     # скачать Temurin 17 в ~/.local/share/jdks (без sudo)" >&2
+    echo "  sudo apt install openjdk-17-jdk-headless # Ubuntu" >&2
+    echo "  brew install --cask temurin@17           # macOS" >&2
     exit 1
   fi
 fi
-[[ -n "${JAVA_HOME:-}" ]] && export PATH="$JAVA_HOME/bin:$PATH"
+export JAVA_HOME="$JDK"
+export PATH="$JAVA_HOME/bin:$PATH"
+echo ">>> JDK: $JAVA_HOME (Java $(java_major "$JAVA_HOME"))"
 
 if [[ $LOW_MEM -eq 1 ]]; then
   GRADLE_ARGS+=(
